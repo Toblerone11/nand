@@ -1,0 +1,8 @@
+CHIP ShiftLeft{
+     IN in[16];
+     OUT out[16];
+     
+     PARTS:
+	 Add16(a=in, b=in, out[1..14]=out[1..14]);
+	 And(a=in[15], b=in[15], out=out[15]);
+}

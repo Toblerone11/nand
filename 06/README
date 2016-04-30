@@ -1,0 +1,35 @@
+ronlik, toblerone
+===============================================================================
+Ron Pick, 		ID 301643334, ron.pick@mail.huji.ac.il
+Ron Likvornik, 	ID 302574694 ron.likvornik@mail.huji.ac.il
+===============================================================================
+
+                           Project 6 - The Assembler
+                           ----------------------------------
+  
+
+Submitted Files
+---------------
+Assembler.java	- Manages the translation process of a given .asm file, using the other classes.
+
+Parser.java		- responsible for recognizing the type of each line
+				  and to give details about the current 
+				  
+CodeTranslator.java	- translating given command (or part of it)
+					  from text into suitable binary instruction
+					  
+SymbolTable.java	- helps the manager to keep track on the already defined symbols.
+
+README			- this file.
+
+Remarks
+-------
+* The design is as follows:
+	- the Assembler is the manager. It uses Parser and Code Translator where both of them are
+	  independent of each other.
+	  the assembler is asking from the parser the relevant part of the command,
+	  and gives it to the translator in order to get the binary representation.
+	- the Assembler is also the only one which knows the SymbolTable and uses it to store the
+	  encountered variables with the names that the Parser extracted.
+  
+

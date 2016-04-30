@@ -1,0 +1,68 @@
+CHIP Mul{
+    IN a[16], b[16];
+    OUT out[16];
+
+    PARTS:
+	//creating bus of zero bits, by creating minus one, and negating it.
+	Not16(in=a, out=negA);
+	Add16(a=a, b=negA, out=minusOne);
+	Not16(in=minusOne, out=Zero16);
+	
+	Mux16(a=Zero16, b=a, sel=b[0], out=addArg0);
+	ShiftLeft(in=a, out=a1Left);
+	
+	Mux16(a=Zero16, b=a1Left, sel=b[1], out=addArg1);
+	Add16(a=addArg0, b=addArg1, out=out1);
+	ShiftLeft(in=a1Left, out=a2Left);
+
+	Mux16(a=Zero16, b=a2Left, sel=b[2], out=addArg2);
+	Add16(a=out1, b=addArg2, out=out2);
+	ShiftLeft(in=a2Left, out=a3Left);
+
+	Mux16(a=Zero16, b=a3Left, sel=b[3], out=addArg3);
+	Add16(a=out2, b=addArg3, out=out3);
+	ShiftLeft(in=a3Left, out=a4Left);
+
+	Mux16(a=Zero16, b=a4Left, sel=b[4], out=addArg4);
+	Add16(a=out3, b=addArg4, out=out4);
+	ShiftLeft(in=a4Left, out=a5Left);
+
+	Mux16(a=Zero16, b=a5Left, sel=b[5], out=addArg5);
+	Add16(a=out4, b=addArg5, out=out5);
+	ShiftLeft(in=a5Left, out=a6Left);
+
+	Mux16(a=Zero16, b=a6Left, sel=b[6], out=addArg6);
+	Add16(a=out5, b=addArg6, out=out6);
+	ShiftLeft(in=a6Left, out=a7Left);
+
+	Mux16(a=Zero16, b=a7Left, sel=b[7], out=addArg7);
+	Add16(a=out6, b=addArg7, out=out7);
+	ShiftLeft(in=a7Left, out=a8Left);
+
+	Mux16(a=Zero16, b=a8Left, sel=b[8], out=addArg8);
+	Add16(a=out7, b=addArg8, out=out8);
+	ShiftLeft(in=a8Left, out=a9Left);
+
+	Mux16(a=Zero16, b=a9Left, sel=b[9], out=addArg9);
+	Add16(a=out8, b=addArg9, out=out9);
+	ShiftLeft(in=a9Left, out=a10Left);
+
+	Mux16(a=Zero16, b=a10Left, sel=b[10], out=addArg10);
+	Add16(a=out9, b=addArg10, out=out10);
+	ShiftLeft(in=a10Left, out=a11Left);
+
+	Mux16(a=Zero16, b=a11Left, sel=b[11], out=addArg11);
+	Add16(a=out10, b=addArg11, out=out11);
+	ShiftLeft(in=a11Left, out=a12Left);
+
+	Mux16(a=Zero16, b=a12Left, sel=b[12], out=addArg12);
+	Add16(a=out11, b=addArg12, out=out12);
+	ShiftLeft(in=a12Left, out=a13Left);
+
+	Mux16(a=Zero16, b=a13Left, sel=b[13], out=addArg13);
+	Add16(a=out12, b=addArg13, out=out13);
+	ShiftLeft(in=a13Left, out=a14Left);
+
+	Mux16(a=Zero16, b=a14Left, sel=b[14], out=addArg14);
+	Add16(a=out13, b=addArg14, out=out);
+}

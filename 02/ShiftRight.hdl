@@ -1,0 +1,13 @@
+CHIP ShiftRight{
+     IN in[16];
+     OUT out[16];
+     
+PARTS:
+	 //Xor16(a=in[16], b=in[16], out=zero16);
+	 //Not16(in=zero16, out=minusOne);
+	 
+	And16(a=in, b=in, out[1..15]=out[0..14]);
+	And(a=in[15], b=in[15], out=out[15]);
+	
+	
+}
