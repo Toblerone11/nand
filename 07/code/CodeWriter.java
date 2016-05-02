@@ -63,6 +63,7 @@ public class CodeWriter {
         asmFile.addInstruction(String.format("@%s", address));
     }
 
+
     private void writeSetARegToAdressInAddress(String firstAddr) {
         asmFile.addInstruction(String.format("@%s", firstAddr));
         asmFile.addInstruction("A=M");
