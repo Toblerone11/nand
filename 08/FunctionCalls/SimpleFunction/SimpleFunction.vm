@@ -10,6 +10,3 @@ push local 1
 push argument 0
 push argument 1
 return
-
-//
-	

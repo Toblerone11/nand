@@ -21,16 +21,20 @@ public class Main {
         File[] files;
         String outDir;
         File inputFile = new File(args[0]);
+        String asmFile;
         if (inputFile.isDirectory()) {
             files = inputFile.listFiles();
             outDir = args[0];
+            asmFile = inputFile.getName() + ASM_FILETYPE;;
         } else {
             files = new File[] {inputFile};
             outDir = inputFile.getParent();
+            asmFile = inputFile.getName();
+            asmFile = asmFile.substring(0, (asmFile.length() - VM_FILETYPE.length())) + ASM_FILETYPE;
         }
 
         // prepare file to write.
-        String outputPath = outDir + FileSystems.getDefault().getSeparator() + ASM_FILENAME + ASM_FILETYPE;
+        String outputPath = outDir + FileSystems.getDefault().getSeparator() + asmFile;
         CodeWriter cw = new CodeWriter(outputPath);
         cw.writeInit();
 
