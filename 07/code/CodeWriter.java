@@ -19,10 +19,10 @@ public class CodeWriter {
     private static final String D_STORE_M = "D=M";
     private static final String D_STORE_A = "D=A";
     private static final String M_STORE_D = "M=D";
-    private static final String GOTO = "0;JMP", IF_GOTO = "D;JMP";
+    private static final String GOTO = "0;JMP", IF_GOTO = "D;JNE";
 
     //RAM variables
-    private static final String FRAME = "frame", ADDRESS_TO_POP = "popAddr", RET_VAL = "returnValue", ARITHMETIC_ARG_1 = "arthArg1", ARITHMETIC_ARG_2 = "arthArg2";
+    private static final String FRAME = "frame", ADDRESS_TO_POP = "popAddr", RET_VAL = "returnValue", RET_SP_ADDR = "spRetAddr";
 
     // arithmentic commands
     private static final String ADD = "add", SUB = "sub", NEG = "neg", EQ = "eq", GT = "gt", LT = "lt", AND = "and", OR = "or", NOT = "not";
@@ -33,6 +33,7 @@ public class CodeWriter {
 
     /* data members */
     private FileOrgnizer asmFile;
+    private String currentVmFileName;
     private int conditionCounter;
     private int continueCounter;
     private int returnCounter;
@@ -43,6 +44,7 @@ public class CodeWriter {
         conditionCounter = 0;
         continueCounter = 0;
         returnCounter = 0;
+        currentVmFileName = "";
     }
 
     /* METHODS */
@@ -62,7 +64,6 @@ public class CodeWriter {
     private void writeSetAReg(String address) {
         asmFile.addInstruction(String.format("@%s", address));
     }
-
 
     private void writeSetARegToAdressInAddress(String firstAddr) {
         asmFile.addInstruction(String.format("@%s", firstAddr));
@@ -109,9 +110,14 @@ public class CodeWriter {
         } else if (segment.equals(RAM)) {
             segAddrPointer = RAM_ADDR;
             pointerType = PTR_TO_VAL;
+        } else if (segment.equals(STAT)) {
+            //TODO create table of all variables and get name from there
+            segAddrPointer = String.format("%s.var_%s", currentVmFileName, index);
+            pointerType = PTR_TO_VAL;
+            index = "0";
         }
 
-        asmFile.addInstruction(String.format("@%s", segAddrPointer));
+        writeSetAReg(segAddrPointer);
         switch (pointerType) {
             case (PTR_TO_PTR):
                 asmFile.addInstruction(D_STORE_M);
@@ -274,8 +280,8 @@ public class CodeWriter {
      */
     public void writeIf(String label) {
         // set A reg to sp - 1, the value to check, and dtore the value in D.
-        writeSetAReg(SP_ADDR);
         writeUpdateBeforePop();
+        asmFile.addInstruction("A=M");
         asmFile.addInstruction(D_STORE_M);
 
         // prepare to jump and check the value
@@ -350,6 +356,12 @@ public class CodeWriter {
         writeSetAReg(FRAME);
         asmFile.addInstruction(M_STORE_D);
 
+        // store the current ARG base at RET_SP_ADDR variable
+        writeSetAReg(ARG_ADDR);
+        asmFile.addInstruction("D=M+1");
+        writeSetAReg(RET_SP_ADDR);
+        asmFile.addInstruction(M_STORE_D);
+
         // store the return address at RET_VAL variable
         writeSetDFromConst(String.format("%s", 5));
         writeSetAReg(LCL_ADDR);
@@ -371,8 +383,9 @@ public class CodeWriter {
         writePushPopCommand(C_POP, RAM, ARG_ADDR);
         writePushPopCommand(C_POP, RAM, LCL_ADDR);
 
-        // put the top of the stack at
-        //TODO change the address of SP
+        // set the top of the stack at arg[0]
+        writeSetAReg(RET_SP_ADDR);
+        writeGetValFromAddress(SP_ADDR);
 
         // jump to the return address
         writeSetARegToAdressInAddress(RET_VAL);
@@ -411,26 +424,23 @@ public class CodeWriter {
 //        writeSetAReg(LCL_ADDR);
 //        asmFile.addInstruction(M_STORE_D);
 //
-//        writeSetDFromConst("2900");
+//        writeSetDFromConst("3000");
 //        writeSetAReg(THIS_ADDR);
 //        asmFile.addInstruction(M_STORE_D);
 //
-//        writeSetDFromConst("3000");
+//        writeSetDFromConst("4000");
 //        writeSetAReg(THAT_ADDR);
 //        asmFile.addInstruction(M_STORE_D);
-//
-//        writeSetDFromConst("3100");
-//        writeSetAReg(TEMP_ADDR);
-//        asmFile.addInstruction(M_STORE_D);
-//
+
 //        writeSetDFromConst(String.format("%s", STACK_BEGIN));
 //        writeSetAReg(SP_ADDR);
 //        asmFile.addInstruction(M_STORE_D);
 
-//        // invoking the main.
+//         invoking the main.
+//        writeCall(VM_MAIN_FUNC, 0);
 //        writeGoto(VM_MAIN_FUNC);
-//
-//        // go to infinite loop
+
+//         go to infinite loop
 //        writeGoto("END");
     }
 
@@ -449,4 +459,7 @@ public class CodeWriter {
         asmFile.addBlankLine();
     }
 
+    public void setCurrentVmFileName(String currentVmFileName) {
+        this.currentVmFileName = currentVmFileName;
+    }
 }
