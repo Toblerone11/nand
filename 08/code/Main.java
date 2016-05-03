@@ -21,16 +21,20 @@ public class Main {
         File[] files;
         String outDir;
         File inputFile = new File(args[0]);
+        String asmFile;
         if (inputFile.isDirectory()) {
             files = inputFile.listFiles();
             outDir = args[0];
+            asmFile = inputFile.getName() + ASM_FILETYPE;;
         } else {
             files = new File[] {inputFile};
             outDir = inputFile.getParent();
+            asmFile = inputFile.getName();
+            asmFile = asmFile.substring(0, (asmFile.length() - VM_FILETYPE.length())) + ASM_FILETYPE;
         }
 
         // prepare file to write.
-        String outputPath = outDir + FileSystems.getDefault().getSeparator() + ASM_FILENAME + ASM_FILETYPE;
+        String outputPath = outDir + FileSystems.getDefault().getSeparator() + asmFile;
         CodeWriter cw = new CodeWriter(outputPath);
         cw.writeInit();
 
@@ -38,8 +42,10 @@ public class Main {
             if (!isVmFile(vmFile.getPath()))
                 continue;
 
-            // reading from vm file and translating
             String funcName = vmFile.getName().substring(0, vmFile.getName().length() - VM_FILETYPE.length());
+            cw.setCurrentVmFileName(funcName);
+
+            // reading from vm file and translating
             Parser parser = new Parser(vmFile);
             while (parser.hasMoreLines()) {
                 parser.advance();
@@ -60,10 +66,10 @@ public class Main {
                         cw.writeLabel(String.format("%s$%s", funcName, parser.getArg1()));
                         break;
                     case C_GOTO:
-                        cw.writeGoto(parser.getArg1());
+                        cw.writeGoto(String.format("%s$%s", funcName, parser.getArg1()));
                         break;
                     case C_IF:
-                        cw.writeIf(parser.getArg1());
+                        cw.writeIf(String.format("%s$%s", funcName, parser.getArg1()));
                         break;
                     case C_FUNCTION:
                         cw.writeFunction(parser.getArg1(), Integer.parseInt(parser.getArg2()));
@@ -76,7 +82,7 @@ public class Main {
                         break;
                 }
             }
-            cw.finish();
         }
+        cw.finish();
     }
 }
