@@ -3,7 +3,7 @@ import java.nio.file.FileSystems;
 
 import static constants.CommandType.*;
 
-public class Main {
+public class VMtranslator {
 
     /* constants */
     private static final String VM_FILETYPE = ".vm", ASM_FILETYPE = ".asm", ASM_FILENAME = "vmTranslated";
