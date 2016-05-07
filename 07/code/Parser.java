@@ -19,7 +19,7 @@ public class Parser {
     private static final Pattern toIgnore = Pattern.compile(String.format("(?:|\\s+|%s)", COMMENT));
 
 
-    public static final Pattern stackCmd = Pattern.compile("(?<stkcmd>pop|push)\\s+(?<seg>[a-z]++)\\s+(?<index>\\d++)\\s*");
+    public static final Pattern stackCmd = Pattern.compile("(?<stkcmd>pop|push)\\s+(?<seg>[a-z]++)\\s+(?<index>(-)?\\d++)\\s*");
     public static final Pattern arithmatickCmd = Pattern.compile("(?<op>add|sub|neg|eq|gt|lt|and|or|not)\\s*");
     public static final Pattern labelCmd = Pattern.compile("label\\s+(?<label>" + LABEL + ")\\s*");
     public static final Pattern gotoCmd = Pattern.compile("goto\\s+(?<label>" + LABEL + ")\\s*");

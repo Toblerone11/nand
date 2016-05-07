@@ -1,0 +1,5 @@
+push constant 200
+push constant 400
+sub
+push constant -1000
+lt

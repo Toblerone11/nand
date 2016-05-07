@@ -20,9 +20,10 @@ public class CodeWriter {
     private static final String D_STORE_A = "D=A";
     private static final String M_STORE_D = "M=D";
     private static final String GOTO = "0;JMP", IF_GOTO = "D;JNE";
+	private static final char NEG_SGN = '-';
 
     //RAM variables
-    private static final String FRAME = "frame", ADDRESS_TO_POP = "popAddr", RET_VAL = "returnValue", RET_SP_ADDR = "spRetAddr";
+    private static final String FRAME = "13", ADDRESS_TO_POP = "15", RET_VAL = "14";
 
     // arithmentic commands
     private static final String ADD = "add", SUB = "sub", NEG = "neg", EQ = "eq", GT = "gt", LT = "lt", AND = "and", OR = "or", NOT = "not";
@@ -168,7 +169,13 @@ public class CodeWriter {
 
         } else if (type == C_PUSH) {
             if (segment.equals(CONSTANT)) {
-                writeSetDFromConst(index);
+				if (index.charAt(0) == NEG_SGN) {
+					index = index.substring(1);
+					writeSetDFromConst(index);
+					asmFile.addInstruction("D=-D");
+				} else {
+					writeSetDFromConst(index);
+				}
             } else {
                 writeSetMemoryToIndexInSegment(segment, index);
                 writeSetDFromAddr();
@@ -356,39 +363,38 @@ public class CodeWriter {
         writeSetAReg(FRAME);
         asmFile.addInstruction(M_STORE_D);
 
-        // store the current ARG base at RET_SP_ADDR variable
-        writeSetAReg(ARG_ADDR);
-        asmFile.addInstruction("D=M+1");
-        writeSetAReg(RET_SP_ADDR);
-        asmFile.addInstruction(M_STORE_D);
-
         // store the return address at RET_VAL variable
-        writeSetDFromConst(String.format("%s", 5));
-        writeSetAReg(LCL_ADDR);
-        asmFile.addInstruction("A=M-D"); // set D to store the address of the relevant place in stack
-        asmFile.addInstruction(D_STORE_M);
-        writeSetAReg(RET_VAL);
-        asmFile.addInstruction(M_STORE_D);
+        // writeSetDFromConst(String.format("%s", 5));
+        // writeSetAReg(LCL_ADDR);
+        // asmFile.addInstruction("A=M-D"); // set D to store the address of the relevant place in stack
+        // asmFile.addInstruction(D_STORE_M);
+        // writeSetAReg(RET_VAL);
+        // asmFile.addInstruction(M_STORE_D);
 
         // store the return value assuming it is on the top of the stack, into the arg[0] location on the stack.
         writePushPopCommand(C_POP, ARG, BASE_INDEX);
 
-        // set the top of the stack at lcl[0]
-        writeSetAReg(FRAME);
-        writeGetValFromAddress(SP_ADDR);
+        // set the top of the stack at arg[0] + 1
+        writeSetAReg(ARG_ADDR);
+        asmFile.addInstruction("D=M+1");
+        writeSetAReg(SP_ADDR);
+        asmFile.addInstruction(M_STORE_D);
 
-        // restore the state of the caller
-        writePushPopCommand(C_POP, RAM, THAT_ADDR);
-        writePushPopCommand(C_POP, RAM, THIS_ADDR);
-        writePushPopCommand(C_POP, RAM, ARG_ADDR);
-        writePushPopCommand(C_POP, RAM, LCL_ADDR);
 
-        // set the top of the stack at arg[0]
-        writeSetAReg(RET_SP_ADDR);
-        writeGetValFromAddress(SP_ADDR);
+        // restore the state of the caller as stored in the stack
+        for (int i = 4; i > 0; i--) {
+            writeSetAReg(FRAME);
+            asmFile.addInstruction("M=M-1"); // update the current address
+            asmFile.addInstruction("A=M"); // make the value be the address
+            writeSetDFromAddr();
+            writeSetAReg(String.format("%d", i));
+            asmFile.addInstruction(M_STORE_D);
+        }
 
         // jump to the return address
-        writeSetARegToAdressInAddress(RET_VAL);
+        writeSetAReg(FRAME);
+        asmFile.addInstruction("M=M-1"); // update the current address
+        asmFile.addInstruction("A=M"); // make the value be the address
         asmFile.addInstruction(GOTO);
     }
 

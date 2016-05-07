@@ -34,12 +34,12 @@ D=A
 @0
 A=A+D
 D=A
-@popAddr
+@15
 M=D
 @0
 A=M
 D=M
-@popAddr
+@15
 A=M
 M=D
 
@@ -51,12 +51,12 @@ D=A
 @0
 A=A+D
 D=A
-@popAddr
+@15
 M=D
 @0
 A=M
 D=M
-@popAddr
+@15
 A=M
 M=D
 
@@ -68,12 +68,12 @@ D=A
 @0
 A=A+D
 D=A
-@popAddr
+@15
 M=D
 @0
 A=M
 D=M
-@popAddr
+@15
 A=M
 M=D
 
