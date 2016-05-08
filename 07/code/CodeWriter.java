@@ -20,10 +20,10 @@ public class CodeWriter {
     private static final String D_STORE_A = "D=A";
     private static final String M_STORE_D = "M=D";
     private static final String GOTO = "0;JMP", IF_GOTO = "D;JNE";
-	private static final char NEG_SGN = '-';
+    private static final char NEG_SGN = '-';
 
     //RAM variables
-    private static final String FRAME = "13", ADDRESS_TO_POP = "15", RET_VAL = "14";
+    private static final String FRAME = "13", ADDRESS_TO_POP = "14", ARITHMETIC2ndArg = "15";
 
     // arithmentic commands
     private static final String ADD = "add", SUB = "sub", NEG = "neg", EQ = "eq", GT = "gt", LT = "lt", AND = "and", OR = "or", NOT = "not";
@@ -35,14 +35,17 @@ public class CodeWriter {
     /* data members */
     private FileOrgnizer asmFile;
     private String currentVmFileName;
-    private int conditionCounter;
-    private int continueCounter;
-    private int returnCounter;
+    private int conditionCounter, continueCounter, returnCounter,
+            trueCounter, negativeCounter, positiveCounter, diffCounter;
 
     /* Ctors */
     public CodeWriter(String name) throws IOException {
         asmFile = new FileOrgnizer(name);
         conditionCounter = 0;
+        trueCounter = 0;
+        negativeCounter = 0;
+        positiveCounter = 0;
+        diffCounter = 0;
         continueCounter = 0;
         returnCounter = 0;
         currentVmFileName = "";
@@ -50,17 +53,19 @@ public class CodeWriter {
 
     /* METHODS */
 
-    private String generateConditionLabel() {
-        return String.format("Condition_%d", ++conditionCounter);
-    }
+    private String generateConditionLabel() { return String.format("Condition_%d", ++conditionCounter); }
 
-    private String generateContinueLabel() {
-        return String.format("Continue_%d", ++continueCounter);
-    }
+    private String generateTrueLabel() { return String.format("True_%d", ++trueCounter); }
 
-    private String generateReturnLabel() {
-        return String.format("Return_%d", ++returnCounter);
-    }
+    private String generateNegativeYLabel() { return String.format("NegativeY_%d", ++negativeCounter); }
+
+    private String generatePositiveYLabel() { return String.format("PositiveY_%d", ++positiveCounter); }
+
+    private String generateDifferenceCheckLabel() { return String.format("DifferenceCheck_%d", ++diffCounter); }
+
+    private String generateContinueLabel() { return String.format("Continue_%d", ++continueCounter); }
+
+    private String generateReturnLabel() { return String.format("Return_%d", ++returnCounter); }
 
     private void writeSetAReg(String address) {
         asmFile.addInstruction(String.format("@%s", address));
@@ -78,12 +83,6 @@ public class CodeWriter {
     private void writeSetDFromConst(String constVal) {
         writeSetAReg(constVal);
         asmFile.addInstruction(D_STORE_A);
-    }
-
-    private void writeGetValFromAddress(String destAddr) {
-        writeSetDFromAddr();
-        writeSetAReg(destAddr);
-        asmFile.addInstruction(M_STORE_D);
     }
 
     private void writeSetMemoryToIndexInSegment(String segment, String index) {
@@ -169,13 +168,13 @@ public class CodeWriter {
 
         } else if (type == C_PUSH) {
             if (segment.equals(CONSTANT)) {
-				if (index.charAt(0) == NEG_SGN) {
-					index = index.substring(1);
-					writeSetDFromConst(index);
-					asmFile.addInstruction("D=-D");
-				} else {
-					writeSetDFromConst(index);
-				}
+                if (index.charAt(0) == NEG_SGN) {
+                    index = index.substring(1);
+                    writeSetDFromConst(index);
+                    asmFile.addInstruction("D=-D");
+                } else {
+                    writeSetDFromConst(index);
+                }
             } else {
                 writeSetMemoryToIndexInSegment(segment, index);
                 writeSetDFromAddr();
@@ -219,12 +218,69 @@ public class CodeWriter {
             } else if (command.equals(OR)) {
                 asmFile.addInstruction(("D=D|M"));
             } else {
-                asmFile.addInstruction(("D=M-D"));
-                String currentConditionLabel = generateConditionLabel();
+                /* in this code segment, in the comments we refer to X as the first argument to compare
+                 * and Y as the second argument. */
+                String conditionLabel = generateConditionLabel();
+                String trueLabel = generateTrueLabel();
                 String currentContinueLabel = generateContinueLabel();
+                String NegativeYLabel = generateNegativeYLabel();
+                String PositiveYLabel = generatePositiveYLabel();
+                String differenceCheckLabel = generateDifferenceCheckLabel();
 
+                /* checking 2nd argument sign */
+                // if (Y < 0)
+                writeSetAReg(NegativeYLabel);
+                asmFile.addInstruction("D;JLT");
+
+                // else if (Y > 0)
+                writeSetAReg(PositiveYLabel);
+                asmFile.addInstruction("D;JGT");
+
+                //else
+				writeLabel(NegativeYLabel);
+                writeSetAReg(ARITHMETIC2ndArg);
+                asmFile.addInstruction(M_STORE_D);
+                writeSetARegToAdressInAddress(SP_ADDR);
+                asmFile.addInstruction(D_STORE_M);
+                writeSetAReg(differenceCheckLabel);
+                asmFile.addInstruction("0;JMP");
+
+                /* checking 1st argument sign */
+                /* Y < 0 */
+                writeLabel(NegativeYLabel);
+                writeSetAReg(ARITHMETIC2ndArg);
+                asmFile.addInstruction(M_STORE_D);
+                writeSetARegToAdressInAddress(SP_ADDR);
+                asmFile.addInstruction(D_STORE_M);
+
+                writeSetAReg(differenceCheckLabel); // if (X < 0) -> same signs -> go to difference check
+                asmFile.addInstruction("D;JLT");
+
+                asmFile.addInstruction("D=1"); // else -> (X >= 0) -> X > Y
+                writeSetAReg(conditionLabel);
+                asmFile.addInstruction("0;JMP");
+
+                /* Y > 0 */
+                writeLabel(PositiveYLabel);
+                writeSetAReg(ARITHMETIC2ndArg);
+                asmFile.addInstruction(M_STORE_D);
+                writeSetARegToAdressInAddress(SP_ADDR);
+                asmFile.addInstruction(D_STORE_M);
+
+                writeSetAReg(differenceCheckLabel); // if (X > 0) -> same signs -> go to difference check
+                asmFile.addInstruction("D;JGT");
+
+                asmFile.addInstruction("D=-1"); // else -> (X <= 0) -> X < Y
+                writeSetAReg(conditionLabel);
+                asmFile.addInstruction("0;JMP");
+
+                /* checking the condition by the given operation */
+                writeLabel(differenceCheckLabel);
+                writeSetAReg(ARITHMETIC2ndArg);
+                asmFile.addInstruction(("D=D-M"));
                 //write jump if true value
-                writeSetAReg(currentConditionLabel);
+                writeLabel(conditionLabel);
+                writeSetAReg(trueLabel);
                 if (command.equals(EQ)) {
                     asmFile.addInstruction("D;JEQ");
                 } else if (command.equals(GT)) {
@@ -235,15 +291,13 @@ public class CodeWriter {
                     asmFile.addInstruction(String.format("!!!!!!!! not arithmatic command: %s !!!!!!!!!!", command));
                 }
 
-                //write default (if not true)
+                /* write false (default) */
                 asmFile.addInstruction("D=0");
-
-                // skip true code segment
-                writeSetAReg(currentContinueLabel);
+                writeSetAReg(currentContinueLabel); // skip true code segment
                 asmFile.addInstruction("0;JMP");
 
-                // write true code segment
-                writeLabel(currentConditionLabel);
+                /* write true code segment */
+                writeLabel(trueLabel);
                 asmFile.addInstruction("D=-1");
 
                 //declare continue label address
