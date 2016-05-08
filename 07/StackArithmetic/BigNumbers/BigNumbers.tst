@@ -1,6 +1,6 @@
-load NegativeNumbers.asm,
-output-file NegativeNumbers.out,
-compare-to NegativeNumbers.cmp,
+load BigNumbers.asm,
+output-file BigNumbers.out,
+compare-to BigNumbers.cmp,
 output-list RAM[0]%D2.6.2 
 	RAM[256]%D2.6.2 RAM[257]%D2.6.2 RAM[258]%D2.6.2 RAM[259]%D2.6.2 RAM[260]%D2.6.2 
 	RAM[261]%D2.6.2 RAM[262]%D2.6.2 RAM[263]%D2.6.2 RAM[264]%D2.6.2 RAM[265]%D2.6.2 RAM[266]%D2.6.2 RAM[267]%D2.6.2 RAM[268]%D2.6.2 RAM[269]%D2.6.2 RAM[270]%D2.6.2; 
@@ -8,7 +8,7 @@ output-list RAM[0]%D2.6.2
 
 set RAM[0] 256,
 
-repeat 1800 {
+repeat 2000 {
   ticktock;
 }
 
