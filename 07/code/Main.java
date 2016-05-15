@@ -19,18 +19,23 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         File[] files;
-        String outDir;
-        File inputFile = new File(args[0]);
+        String outDir = args[0];
+		if (!outDir.substring(outDir.length() - 1).equals(FileSystems.getDefault().getSeparator())) {
+                outDir += FileSystems.getDefault().getSeparator();
+            }
+        //System.out.println(outDir);
+        File inputFile = new File(outDir);
         String asmFile;
         if (inputFile.isDirectory()) {
             files = inputFile.listFiles();
-            outDir = args[0];
             asmFile = inputFile.getName() + ASM_FILETYPE;;
         } else {
             files = new File[] {inputFile};
             outDir = inputFile.getParent();
             asmFile = inputFile.getName();
             asmFile = asmFile.substring(0, (asmFile.length() - VM_FILETYPE.length())) + ASM_FILETYPE;
+			
+			//System.out.println(outDir);
         }
 
         // prepare file to write.
@@ -42,6 +47,7 @@ public class Main {
             if (!isVmFile(vmFile.getPath()))
                 continue;
 
+			//System.out.println(vmFile.getPath());
             String funcName = vmFile.getName().substring(0, vmFile.getName().length() - VM_FILETYPE.length());
             cw.setCurrentVmFileName(funcName);
 
