@@ -1,0 +1,31 @@
+ronlik, toblerone
+===============================================================================
+Ron Pick, 		ID 301643334, ron.pick@mail.huji.ac.il
+Ron Likvornik, 	ID 302574694 ron.likvornik@mail.huji.ac.il
+===============================================================================
+
+                           Project 9 - High Level Programming
+                           ----------------------------------
+  
+
+Submitted Files
+---------------
+Main.jack	- run the game
+
+Board.jack		- responsible for visual the board on screen
+				  
+Square.jack	- reprsent square on screen
+					  
+XOGame.jack	- manage and process the actions in the game 
+
+XSign.jack - reprsent cross on screen
+
+README			- this file.
+
+Remarks
+-------
+* The cross and circle game is a very simple game which invlove two players who needs to cross or circle an entire row\colum or diagonal on board.
+I wanted to make the game a bit more interactive, so instead of letting the player using numbers to choose the right tile the playe
+The player move a box sign through the tiles and choose the right tile by clicking the Y letter.
+* The complexity of calculating where to place the cross\circle and dealing with the box sign and all the movment was much higher than the actual complexity of the game alogirhtm which is very simple.
+ 
