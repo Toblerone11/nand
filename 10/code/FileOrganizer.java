@@ -6,7 +6,7 @@ import java.io.*;
 public class FileOrganizer {
 
     /* constants */
-    private static final String TAB = "\t";
+    private static final String TAB = "  ";
 
     /* data members */
     int currentLine;

@@ -19,7 +19,7 @@ public class CompilationEngine {
             SUBROUT_CALL = "subroutineCall", INT_CONST_TITLE = "integerConstant", STR_CONST_TITLE = "stringConstant",
             EXPR_LIST_TITLE = "expressionList";
     /* terminal titles */
-    private static final String KEYWORD_TITLE = "keyword", IDENT_TITLE = "IDENT_PATT", SYMBOL_TITLE = "symbol";
+    private static final String KEYWORD_TITLE = "keyword", IDENT_TITLE = "identifier", SYMBOL_TITLE = "symbol";
 
     /* statements types first char */
     private static final char DO_C = 'd', WHILE_C = 'w', IF_C = 'i', LET_C = 'l', RETURN_C = 'r';
@@ -31,22 +31,24 @@ public class CompilationEngine {
 
 
     /* data members */
-    JackTokenizer tokenizer;
-    FileOrganizer xmlFile;
-    Stack<String> stateStack;
-    String currentToken;
+    private JackTokenizer tokenizer;
+    private FileOrganizer xmlFile;
+    private Stack<String> stateStack;
 
     /* C-tor */
     public CompilationEngine(JackTokenizer tokenizer, String outFileName) throws IOException {
         this.xmlFile = new FileOrganizer(outFileName);
         this.stateStack = new Stack<>();
         this.tokenizer = tokenizer;
-        this.currentToken = null;
     }
 
     private void setNextToken() throws IOException {
         if (tokenizer.hasMoreTokens())
             tokenizer.advance();
+    }
+
+    private void finish() {
+        xmlFile.close();
     }
 
     public void compileClass() throws IOException, SyntaxException {
@@ -58,16 +60,12 @@ public class CompilationEngine {
 
         setNextToken();
         if (!(tokenizer.getTokenType() == IDENTIFIER)) tokenizer.throwException(CLASS_TITLE);
-        xmlFile.addTerminal(IDENT_TITLE, currentToken);
+        xmlFile.addTerminal(IDENT_TITLE, tokenizer.getIdentifier());
 
         setNextToken();
-        if (tokenizer.getTokenType() == SYMBOL) {
-            if (tokenizer.getSymbol() == OPEN_SCOPE) {
-                xmlFile.addTerminal(SYMBOL_TITLE, OPEN_SCOPE);
-                return;
-            }
-        }
-        tokenizer.throwException(CLASS_TITLE);
+        if (!(tokenizer.getTokenType() == SYMBOL)) tokenizer.throwException(CLASS_TITLE);
+        if (!(tokenizer.getSymbol() == OPEN_SCOPE)) tokenizer.throwException(CLASS_TITLE);
+        xmlFile.addTerminal(SYMBOL_TITLE, OPEN_SCOPE);
 
         setNextToken();
         while (tokenizer.getTokenType() == KEYWORD) {
@@ -81,14 +79,14 @@ public class CompilationEngine {
             } else {
                 tokenizer.throwException(CLASS_TITLE);
             }
-
-            setNextToken();
         }
 
         // next token already been set (just before the while had been broke.
         if (tokenizer.getTokenType() == SYMBOL) {
-            if (tokenizer.getSymbol() == OPEN_SCOPE) {
+            if (tokenizer.getSymbol() == CLOSE_SCOPE) {
                 xmlFile.addTerminal(SYMBOL_TITLE, CLOSE_SCOPE);
+                compileEndScope();
+                xmlFile.close();
                 return;
             }
         }
@@ -115,7 +113,7 @@ public class CompilationEngine {
         // getting the return type of the subroutine.
         setNextToken();
         if (tokenizer.getTokenType() == KEYWORD) {
-            if (!(tokenizer.getKeyWord() == VOID_KW)) tokenizer.throwException(SUBROUT_DEC_TITLE);
+            if (!(tokenizer.getKeyWord().equals(VOID_KW))) tokenizer.throwException(SUBROUT_DEC_TITLE);
             xmlFile.addTerminal(KEYWORD_TITLE, VOID_KW);
         } else if (tokenizer.getTokenType() == IDENTIFIER) {
             xmlFile.addTerminal(IDENT_TITLE, tokenizer.getIdentifier());
@@ -126,7 +124,7 @@ public class CompilationEngine {
         // getting the name of the subroutine.
         setNextToken();
         if (!(tokenizer.getTokenType() == IDENTIFIER)) tokenizer.throwException(SUBROUT_DEC_TITLE);
-        xmlFile.addTerminal(IDENT_TITLE, currentToken);
+        xmlFile.addTerminal(IDENT_TITLE, tokenizer.getIdentifier());
 
         // get parameter list.
         setNextToken(); // getting the open parenthesis for the param list.
@@ -134,11 +132,13 @@ public class CompilationEngine {
         if (!(OPEN_PARAM_LIST == tokenizer.getSymbol())) tokenizer.throwException(SUBROUT_DEC_TITLE);
         xmlFile.addTerminal(SYMBOL_TITLE, OPEN_PARAM_LIST);
 
+        setNextToken();
         compileParameterList();
 
         // close parameter list. assuming the current token is closing parenthesis.
         xmlFile.addTerminal(SYMBOL_TITLE, CLOSE_PARAM_LIST);
 
+        setNextToken();
         compileSubroutineBody();
 
         compileEndScope();
@@ -149,7 +149,6 @@ public class CompilationEngine {
         stateStack.push(SUBROUT_BODY);
         xmlFile.beginScope(SUBROUT_BODY);
 
-        setNextToken();
         if (!(tokenizer.getTokenType() == SYMBOL)) tokenizer.throwException(SUBROUT_BODY);
         if (!(tokenizer.getSymbol() == OPEN_SCOPE)) tokenizer.throwException(SUBROUT_BODY);
         xmlFile.addTerminal(SYMBOL_TITLE, OPEN_SCOPE);
@@ -169,7 +168,6 @@ public class CompilationEngine {
             else {
                 tokenizer.throwException(SUBROUT_BODY);
             }
-            setNextToken();
         }
 
         // closing the scope, assuming the current token is the closing scope.
@@ -177,40 +175,33 @@ public class CompilationEngine {
         if (!(tokenizer.getSymbol() == CLOSE_SCOPE)) tokenizer.throwException(SUBROUT_BODY);
         xmlFile.addTerminal(SYMBOL_TITLE, CLOSE_SCOPE);
         compileEndScope();
+        setNextToken();
     }
 
     public void compileParameterList() throws IOException, SyntaxException {
-        // assuming the current token is '('.
-        // must end with the current token as ')'.
-
-        // 4580910100126580 - exp: 01/19
-        // recive - infinity - hebrew
+        // assuming the current token is the type of the first parameter of closed parenthesis.
 
         stateStack.push(PARAMLIST_TITLE);
         xmlFile.beginScope(PARAMLIST_TITLE);
 
-        boolean firstIter = true;
-        while (tokenizer.getTokenType() == SYMBOL) {
+        boolean checkParams = (!(tokenizer.getTokenType() == SYMBOL) || !(tokenizer.getSymbol() == CLOSE_PARAM_LIST));
+        while (checkParams) {
+            if (!(tokenizer.getTokenType() == KEYWORD)) tokenizer.throwException(PARAMLIST_TITLE); // param type
+            xmlFile.addTerminal(KEYWORD_TITLE, tokenizer.getKeyWord());
 
-            if (!firstIter) {
-                if (tokenizer.getSymbol() == CLOSE_PARAM_LIST) {
-                    compileEndScope();
-                    return;
-                }
-                if (!(tokenizer.getSymbol() == SEPARATOR)) tokenizer.throwException(PARAMLIST_TITLE);
-                xmlFile.addTerminal(SYMBOL_TITLE, SEPARATOR);
-            } else {
-                firstIter = false;
-            }
-
-            // get parameter name.
             setNextToken();
-            if (tokenizer.getTokenType() == IDENTIFIER) {
-                xmlFile.addTerminal(IDENT_TITLE, tokenizer.getIdentifier());
-            }
+            if (!(tokenizer.getTokenType() == IDENTIFIER)) tokenizer.throwException(PARAMLIST_TITLE); // param name
+            xmlFile.addTerminal(IDENT_TITLE, tokenizer.getIdentifier());
+
+            setNextToken();
+            if (!(tokenizer.getTokenType() == SYMBOL)) tokenizer.throwException(PARAMLIST_TITLE); // should be ',' or ')'
+            if (tokenizer.getSymbol() == CLOSE_PARAM_LIST) {
+                break;
+            } else if (!(tokenizer.getSymbol() == SEPARATOR)) tokenizer.throwException(PARAMLIST_TITLE);
+            xmlFile.addTerminal(SYMBOL_TITLE, SEPARATOR);
             setNextToken();
         }
-        tokenizer.throwException(PARAMLIST_TITLE);
+        compileEndScope();
     }
 
     public void compileVarDec() throws IOException, SyntaxException {
@@ -261,9 +252,24 @@ public class CompilationEngine {
         xmlFile.beginScope(DO_TITLE);
         xmlFile.addTerminal(KEYWORD_TITLE, DO_KW);
 
-        compileSubroutineCall();
+        setNextToken();
+        if (!(tokenizer.getTokenType() == IDENTIFIER)) tokenizer.throwException(DO_TITLE);
+        String name = tokenizer.getIdentifier();
+        setNextToken();
+        if(!(tokenizer.getTokenType() == SYMBOL)) tokenizer.throwException(DO_TITLE);
+        char symbol = tokenizer.getSymbol();
+        if ((symbol == OPEN_PARAM_LIST) || (symbol == CLASS_ACCESS)) { // the identifier is function name.
+            compileSubroutineCall(name, symbol);
 
-        compileEndScope();
+            if (!(tokenizer.getTokenType() == SYMBOL)) tokenizer.throwException(DO_TITLE);
+            if (!(tokenizer.getSymbol() == END_INSTRUCTION)) tokenizer.throwException(DO_TITLE);
+            xmlFile.addTerminal(SYMBOL_TITLE, END_INSTRUCTION);
+            compileEndScope();
+
+            setNextToken();
+            return;
+        }
+        tokenizer.throwException(SUBROUT_CALL);
     }
 
     public void compileLet() throws IOException, SyntaxException {
@@ -282,6 +288,7 @@ public class CompilationEngine {
         if (!(tokenizer.getTokenType() == SYMBOL)) tokenizer.throwException(LET_TITLE);
         if (tokenizer.getSymbol() == OPEN_ARRAY) {
             xmlFile.addTerminal(SYMBOL_TITLE, OPEN_ARRAY);
+            setNextToken();
             compileExpression();
             //TODO check if this is already the current token.
             xmlFile.addTerminal(SYMBOL_TITLE, CLOSE_ARRAY);
@@ -295,10 +302,11 @@ public class CompilationEngine {
         xmlFile.addTerminal(SYMBOL_TITLE, EQ_ASSIGN);
 
         // get assigned expression
+        setNextToken();
         compileExpression();
 
         // end statement with ;
-        setNextToken();
+//        setNextToken();
         if (!(tokenizer.getTokenType() == SYMBOL)) tokenizer.throwException(LET_TITLE);
         if (!(tokenizer.getSymbol() == END_INSTRUCTION)) tokenizer.throwException(LET_TITLE);
         xmlFile.addTerminal(SYMBOL_TITLE, END_INSTRUCTION);
@@ -320,14 +328,21 @@ public class CompilationEngine {
         xmlFile.addTerminal(SYMBOL_TITLE, OPEN_COND);
 
         // check inner condition
+        setNextToken();
         compileExpression();
 
         // check close parenthesis
+        if (!(tokenizer.getTokenType() == SYMBOL)) tokenizer.throwException(WHILE_TITLE);
+        if (!(tokenizer.getSymbol() == CLOSE_COND)) tokenizer.throwException(WHILE_TITLE);
+        xmlFile.addTerminal(SYMBOL_TITLE, CLOSE_COND);
+
+        // check open curly brackets for body
         setNextToken();
         if (!(tokenizer.getTokenType() == SYMBOL)) tokenizer.throwException(WHILE_TITLE);
         if (!(tokenizer.getSymbol() == OPEN_SCOPE)) tokenizer.throwException(WHILE_TITLE);
-        xmlFile.addTerminal(SYMBOL_TITLE, OPEN_COND);
+        xmlFile.addTerminal(SYMBOL_TITLE, OPEN_SCOPE);
 
+        setNextToken();
         compileStatements();
 
         // check closing scope, assuming the current token is '}'.
@@ -344,14 +359,17 @@ public class CompilationEngine {
         xmlFile.beginScope(RETURN_TITLE);
         xmlFile.addTerminal(KEYWORD_TITLE, RETURN_KW);
 
-        compileExpression();
+        setNextToken();
+        if (!(tokenizer.getTokenType() == SYMBOL) || !(tokenizer.getSymbol() == END_INSTRUCTION)) {
+            compileExpression();
+        }
 
         // assumig the current token is ';'.
         if (!(tokenizer.getTokenType() == SYMBOL)) tokenizer.throwException(RETURN_TITLE);
         if (!(tokenizer.getSymbol() == END_INSTRUCTION)) tokenizer.throwException(RETURN_TITLE);
         xmlFile.addTerminal(SYMBOL_TITLE, END_INSTRUCTION);
-        setNextToken();
         compileEndScope();
+        setNextToken();
     }
 
     public void compileIf() throws SyntaxException, IOException {
@@ -367,11 +385,10 @@ public class CompilationEngine {
         xmlFile.addTerminal(SYMBOL_TITLE, OPEN_COND);
 
         // check inner condition
+        setNextToken();
         compileExpression();
 
         // check close parenthesis
-        setNextToken();
-        // TODO check the ending of expression statement
         if (!(tokenizer.getTokenType() == SYMBOL)) tokenizer.throwException(IF_TITLE);
         if (!(tokenizer.getSymbol() == CLOSE_COND)) tokenizer.throwException(IF_TITLE);
         xmlFile.addTerminal(SYMBOL_TITLE, CLOSE_COND);
@@ -380,8 +397,9 @@ public class CompilationEngine {
         setNextToken();
         if (!(tokenizer.getTokenType() == SYMBOL)) tokenizer.throwException(IF_TITLE);
         if (!(tokenizer.getSymbol() == OPEN_SCOPE)) tokenizer.throwException(IF_TITLE);
-        xmlFile.addTerminal(SYMBOL_TITLE, OPEN_COND);
+        xmlFile.addTerminal(SYMBOL_TITLE, OPEN_SCOPE);
 
+        setNextToken();
         compileStatements();
 
         // check closing scope, assuming the current token is '}'.
@@ -391,14 +409,14 @@ public class CompilationEngine {
         //checking else statement
         setNextToken();
         if (tokenizer.getTokenType() == KEYWORD) {
-            if (tokenizer.getKeyWord() == ELSE_KW) {
+            if (tokenizer.getKeyWord().equals(ELSE_KW)) {
                 xmlFile.addTerminal(KEYWORD_TITLE, ELSE_KW);
 
                 // check open scope
                 setNextToken();
                 if (!(tokenizer.getTokenType() == SYMBOL)) tokenizer.throwException(IF_TITLE);
                 if (!(tokenizer.getSymbol() == OPEN_SCOPE)) tokenizer.throwException(IF_TITLE);
-                xmlFile.addTerminal(SYMBOL_TITLE, OPEN_COND);
+                xmlFile.addTerminal(SYMBOL_TITLE, OPEN_SCOPE);
 
                 compileStatements();
 
@@ -425,6 +443,7 @@ public class CompilationEngine {
             if ((operator == PLUS) || (operator == MINUS) || (operator == MUL) || (operator == DIV) || (operator == GREATER_THAN)
                     || (operator == LOWER_THAN) || (operator == AND) || (operator == OR) || (operator == EQ)) {
                 xmlFile.addTerminal(SYMBOL_TITLE, operator);
+                setNextToken();
                 compileTerm(); // next symbol is being set.
                 continue;
             }
@@ -439,7 +458,7 @@ public class CompilationEngine {
         xmlFile.beginScope(TERM_TITLE);
 
         boolean isNextTokenSet = false;
-        setNextToken();
+//        setNextToken();
         switch (tokenizer.getTokenType()) {
             case INT_CONST:
                 xmlFile.addTerminal(INT_CONST_TITLE, tokenizer.getIntVal());
@@ -465,6 +484,7 @@ public class CompilationEngine {
                     if (symbol == OPEN_ARRAY) { // the identifier is array name
                         xmlFile.addTerminal(IDENT_TITLE, name);
                         xmlFile.addTerminal(SYMBOL_TITLE, OPEN_ARRAY);
+                        setNextToken();
                         compileExpression();
                         if (!(tokenizer.getTokenType() == SYMBOL)) tokenizer.throwException(TERM_TITLE);
                         if (!(tokenizer.getSymbol() == CLOSE_ARRAY)) tokenizer.throwException(TERM_TITLE);
@@ -472,6 +492,7 @@ public class CompilationEngine {
                         break;
                     } else if ((symbol == OPEN_PARAM_LIST) || (symbol == CLASS_ACCESS)) { // the identifier is function name.
                         compileSubroutineCall(name, symbol);
+                        isNextTokenSet = true;
                         break;
                     }
                 }
@@ -483,17 +504,20 @@ public class CompilationEngine {
                 char symbol = tokenizer.getSymbol();
                 if (symbol == OPEN_PRE_EXP) {
                     xmlFile.addTerminal(SYMBOL_TITLE, OPEN_PRE_EXP);
+                    setNextToken();
                     compileExpression();
                     if (!(tokenizer.getTokenType() == SYMBOL)) tokenizer.throwException(TERM_TITLE);
                     if (!(tokenizer.getSymbol() == CLOSE_PRE_EXP)) tokenizer.throwException(TERM_TITLE);
                     xmlFile.addTerminal(SYMBOL_TITLE, CLOSE_PRE_EXP);
                 } else if ((symbol == NEG_SIGN) || (symbol == DISPOSE)) {
                     xmlFile.addTerminal(SYMBOL_TITLE, symbol);
+                    setNextToken();
                     compileTerm();
                     isNextTokenSet = true;
-                } else {
-                    tokenizer.throwException(TERM_TITLE);
                 }
+//                else {
+//                    tokenizer.throwException(TERM_TITLE);
+//                }
                 break;
         }
         if (!isNextTokenSet)
@@ -506,11 +530,20 @@ public class CompilationEngine {
         stateStack.push(EXPR_LIST_TITLE);
         xmlFile.beginScope(EXPR_LIST_TITLE);
 
+        setNextToken();
+        if (tokenizer.getTokenType() == SYMBOL) {
+            if ((tokenizer.getSymbol() == CLOSE_PARAM_LIST)) {
+                compileEndScope();
+                return;
+            }
+        }
+
         compileExpression();
 
         while (tokenizer.getTokenType() == SYMBOL) {
             if (tokenizer.getSymbol() == SEPARATOR) {
                 xmlFile.addTerminal(SYMBOL_TITLE, SEPARATOR);
+                setNextToken();
                 compileExpression();
                 continue;
             }
@@ -525,8 +558,8 @@ public class CompilationEngine {
      */
     private void compileSubroutineCall(String subroutineName, char nextSymbol) throws IOException, SyntaxException {
         // assuming the current token is '(' of the param list or '.' to access into class field.
-        stateStack.push(SUBROUT_CALL);
-        xmlFile.beginScope(SUBROUT_CALL);
+//        stateStack.push(SUBROUT_CALL);
+//        xmlFile.beginScope(SUBROUT_CALL);
 
         xmlFile.addTerminal(IDENT_TITLE, subroutineName);
 
@@ -545,31 +578,12 @@ public class CompilationEngine {
             if (!(tokenizer.getTokenType() == SYMBOL)) tokenizer.throwException(SUBROUT_CALL);
             if (!(tokenizer.getSymbol() == CLOSE_PARAM_LIST)) tokenizer.throwException(SUBROUT_CALL);
             xmlFile.addTerminal(SYMBOL_TITLE, CLOSE_PARAM_LIST);
-            compileEndScope();
+
+            setNextToken();
+//            compileEndScope();
             return;
         }
         tokenizer.throwException(SUBROUT_CALL);
-    }
-
-    /**
-     * helper function for readability
-     */
-    private void compileSubroutineCall() throws IOException, SyntaxException {
-        // TODO delete method and implement this code segment in the compileDo method.
-        // assuming the current token is before the name of the subroutine
-
-        setNextToken();
-        if (!(tokenizer.getTokenType() == IDENTIFIER)) tokenizer.throwException(SUBROUT_CALL);
-        String name = tokenizer.getIdentifier();
-        setNextToken();
-        if(!(tokenizer.getTokenType() == SYMBOL)) tokenizer.throwException(SUBROUT_CALL);
-        char symbol = tokenizer.getSymbol();
-        if ((symbol == OPEN_PARAM_LIST) || (symbol == CLASS_ACCESS)) { // the identifier is function name.
-            compileSubroutineCall(name, symbol);
-            return;
-        }
-        tokenizer.throwException(SUBROUT_CALL);
-
     }
 
     /**
@@ -611,6 +625,7 @@ public class CompilationEngine {
 
             } else if (tokenizer.getSymbol() == END_INSTRUCTION) {
                 xmlFile.addTerminal(SYMBOL_TITLE, END_INSTRUCTION);
+                setNextToken();
                 break;
 
             } else {
@@ -618,7 +633,20 @@ public class CompilationEngine {
             }
             setNextToken();
         }
+    }
 
+    public static void main(String[] args) throws IOException, SyntaxException {
+        JackTokenizer tokenizer = new JackTokenizer(new File(args[0]));
+        CompilationEngine compiler = new CompilationEngine(tokenizer, args[1] + "\\test.xml");
+        if (tokenizer.hasMoreTokens()) {
+            tokenizer.advance();
+            try {
+                compiler.compileClass();
+            } catch (SyntaxException e) {
+                compiler.finish();
+                throw e;
+            }
+        }
     }
 
 }
