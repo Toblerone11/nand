@@ -42,12 +42,12 @@ public class CompilationEngine {
         this.tokenizer = tokenizer;
     }
 
-    private void setNextToken() throws IOException {
+    private void setNextToken() throws IOException, SyntaxException {
         if (tokenizer.hasMoreTokens())
             tokenizer.advance();
     }
 
-    private void finish() {
+    public void finish() {
         xmlFile.close();
     }
 
@@ -622,31 +622,17 @@ public class CompilationEngine {
                 setNextToken(); // check var name
                 if (!(tokenizer.getTokenType() == IDENTIFIER)) tokenizer.throwException(CLASS_VAR_DEC);
                 xmlFile.addTerminal(IDENT_TITLE, tokenizer.getIdentifier());
-
-            } else if (tokenizer.getSymbol() == END_INSTRUCTION) {
-                xmlFile.addTerminal(SYMBOL_TITLE, END_INSTRUCTION);
                 setNextToken();
+            }
+            else {
                 break;
-
-            } else {
-                tokenizer.throwException(CLASS_VAR_DEC);
-            }
-            setNextToken();
-        }
-    }
-
-    public static void main(String[] args) throws IOException, SyntaxException {
-        JackTokenizer tokenizer = new JackTokenizer(new File(args[0]));
-        CompilationEngine compiler = new CompilationEngine(tokenizer, args[1] + "\\test.xml");
-        if (tokenizer.hasMoreTokens()) {
-            tokenizer.advance();
-            try {
-                compiler.compileClass();
-            } catch (SyntaxException e) {
-                compiler.finish();
-                throw e;
             }
         }
+
+        if (!(tokenizer.getTokenType() == SYMBOL)) tokenizer.throwException(CLASS_VAR_DEC);
+        if (!(tokenizer.getSymbol() == END_INSTRUCTION)) tokenizer.throwException(CLASS_VAR_DEC);
+        xmlFile.addTerminal(SYMBOL_TITLE, END_INSTRUCTION);
+        setNextToken();
     }
 
 }

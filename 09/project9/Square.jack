@@ -1,0 +1,57 @@
+
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/09/Square/Square.jack
+
+/**
+ * Implements a graphic square. A graphic square has a screen location
+ * and a size. It also has methods for drawing, erasing, moving on the 
+ * screen, and changing its size.
+ */
+
+class Square {
+
+    // Location on the screen
+    field int x, y;
+
+    // The size of the square
+    field int size;
+
+    /** Constructs a new square with a given location and size. */
+    constructor Square new(int Ax, int Ay) {
+        let x = Ax;
+        let y = Ay;
+        let size = 8;
+
+        do draw();
+
+        return this;
+    }
+
+    method int getX(){
+        return x;
+    }
+
+    method int getY(){
+        return y;
+    }
+
+    /** Deallocates the object's memory. */
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    /** Draws the square on the screen. */
+    method void draw() {
+        do Screen.drawRectangle(x, y, x + size, y + size);
+        return;
+    }
+
+    /** Erases the square from the screen. */
+    method void erase() {
+        do Screen.drawRectangle(x, y, x + size, y + size);
+        return;
+    }
+}

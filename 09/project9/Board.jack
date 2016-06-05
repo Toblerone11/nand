@@ -1,0 +1,77 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/09/Square/Main.jack
+
+/**
+ * The Main class initializes a new Square Dance game and starts it.
+ */
+class Board {
+	
+    field int size, i;
+    constructor Board new() {
+		let size = 4;
+        return this;
+    }
+	
+		
+	method void createBoard(){
+	
+		do Screen.drawRectangle(5,30, 507, 255);
+		do Screen.setColor(false);
+		// cols
+		do Screen.drawLine(169,5,169,255);
+		do Screen.drawLine(338,5,338,255);
+		// rows
+		do Screen.drawLine(5,105,507,105);
+		do Screen.drawLine(5,185,507,185);
+
+		// left col
+		//do board.addSquare(6,188);
+		//do board.addSquare(6,108);
+		do addSquare(6,33);
+		// mid col
+		//do board.addSquare(169,188);
+		//do board.addSquare(169,108);
+		//do board.addSquare(169,33);
+		// last col
+
+		do Output.printString("Welcome to the best XO Game, press Y to choose your square");
+		do Output.println();
+        do Output.printString("Player 1: X , Player 2: O ");	
+		
+		return;
+	}
+	
+	method void addSquare(int x, int y){
+		var Square sq;
+		do Screen.setColor(false);
+		let sq = Square.new(x, y);
+		do sq.draw();
+		return;
+	}
+	
+	method void addXSign(int x, int y, int size){
+		var XSign xs;
+		let xs = XSign.new(x,y,size);
+		do xs.draw();
+		return;
+	}
+	
+	method void addOSign(int x, int y, int r){
+		do Screen.drawCircle(x,y,r);
+		return;
+	}
+	
+	method void removeSquare(int x, int y){
+		do Screen.setColor(true);
+		do Square.new(x, y);
+		return;
+	}
+	
+	// add circle
+	// add X
+	// 
+
+
+}

@@ -1,0 +1,43 @@
+
+class XSign {
+
+    // Location on the screen
+    field int x, y;
+
+    // The size of the square
+    field int size;
+
+    /** Constructs a new square with a given location and size. */
+    constructor XSign new(int Ax, int Ay, int s) {
+        let x = Ax;
+        let y = Ay;
+        let size = s;
+
+        do draw();
+
+        return this;
+    }
+
+    method int getX(){
+        return x;
+    }
+
+    method int getY(){
+        return y;
+    }
+
+    /** Deallocates the object's memory. */
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+		//do Screen.drawLine(100,100,200,200);
+		//do Screen.drawLine(100,200,200,100);
+    /** Draws the square on the screen. */
+    method void draw() {
+        do Screen.drawLine(x,y,x + size, y + size);
+		do Screen.drawLine(x,y + size,x + size,y);
+        return;
+    }
+
+}

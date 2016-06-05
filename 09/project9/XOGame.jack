@@ -1,0 +1,233 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/09/Square/SquareGame.jack
+
+/**
+ * Implements the Square Dance game.
+ * In this game you can move a black square around the screen and
+ * change its size during the movement.
+ * In the beginning, the square is located at the top-left corner
+ * of the screen. The arrow keys are used to move the square.
+ * The 'z' & 'x' keys are used to decrement and increment the size.
+ * The 'q' key is used to quit the game.
+ */
+class XOGame {
+
+    field int maxWidth, maxLength;
+	field int minWidth, minLength;
+	field int moveWidth, moveLength;
+	field Board board;
+	field int x,y;
+	field int direction;
+	field int current;
+	field boolean exit;
+	field int placed;
+	field String message;
+	
+    /** Constructs a new Square Game. */
+    constructor XOGame new() {
+        let maxWidth = 507;
+		let maxLength = 255;
+		let minWidth = 5;
+		let minLength = 30;
+		let moveWidth = 169;
+		let moveLength = 80;
+		let x = 6;
+		let y = 33;
+        return this;
+    }
+
+    /** Deallocates the object's memory. */
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    /** Starts the game. Handles inputs from the user that control
+     *  the square's movement, direction and size. */
+    method void run() {
+		var char key;
+		var boolean turn;
+		var int i;
+		var Array a;
+
+		let board = Board.new();
+		do board.createBoard();
+		
+		let a = Array.new(9);
+        let exit = false;
+		let current = 0;
+		let i = 0;
+		let placed = 0;
+		
+		while (i < 9)
+		{
+			let a[i] = 0;
+			let i = i + 1;
+		}
+		
+        while (~exit) {
+            // waits for a key to be pressed.
+            while (key = 0) {
+                let key = Keyboard.keyPressed();
+                do moveSquare();
+            }
+
+            if (key = 81) {
+                let exit = true;
+            }
+            if (key = 131) {
+                let direction = 1;
+            }
+            if (key = 133) {
+                let direction = 2;
+            }
+            if (key = 130) {
+                let direction = 3;
+            }
+            if (key = 132) {
+                let direction = 4;
+            }
+			if (key = 89){
+				if (turn){
+					if (a[current] = 0){
+						do board.addOSign(x + 75,y + 25,25);
+						let turn = false;
+						let a[current] = 1;
+						let placed = placed + 1;
+					}
+				}
+				else{
+					if (a[current] = 0){
+						do board.addXSign(x + 50,y,50);
+						let turn = true;
+						let a[current] = 2;
+						let placed = placed + 1;
+					}
+				}
+			}
+
+            // waits for the key to be released.
+            while (~(key = 0)) {
+                let key = Keyboard.keyPressed();
+				do checkBoard(a);
+                do moveSquare();
+            }
+        }
+        do Screen.clearScreen();
+		do Output.printString(message);
+        return;
+	}
+	
+	    /** Moves the square by 2 pixels in the current direction. */
+    method void moveSquare() {
+        if (direction = 1) {
+			
+			if (y - moveLength > minLength){
+				do board.removeSquare(x,y);
+				let y = y - moveLength;
+				do board.addSquare(x,y);
+				let direction = 0;
+				let current = current - 3;
+			}
+        }
+        if (direction = 2) {
+            if (y + moveLength < maxLength){
+				do board.removeSquare(x,y);
+				let y = y + moveLength;
+				do board.addSquare(x,y);
+				let direction = 0;
+				let current = current + 3;
+			}
+        }
+        if (direction = 3) {
+            if (x - moveWidth > minWidth){
+				do board.removeSquare(x,y);
+				let x = x - moveWidth;
+				do board.addSquare(x,y);
+				let direction = 0;
+				let current = current - 1;
+			}
+        }
+        if (direction = 4) {
+            if (x + moveWidth < maxWidth){
+				do board.removeSquare(x,y);
+				let x = x + moveWidth;
+				do board.addSquare(x,y);
+				let direction = 0;
+				let current = current + 1;
+			}
+        }
+
+        do Sys.wait(10); // Delays the next movement.
+        return;
+    }
+	
+	method void checkBoard(Array a){
+		var int i,j;
+		
+		let i = 0;
+		let j = 0;
+
+
+		
+		while (i < 3){
+			if (a[0 + j] = 1 & a[1 + j] = 1 & a[2 + j] = 1){
+				let message = "Player 2 won by the row";
+				let exit = true;
+			}
+			if (a[0 + j] = 2 & a[1 + j] = 2 & a[2 + j] = 2){
+				let message = "Player 1 won by the row";
+				let exit = true;
+			}
+		
+			let j = j + 3;
+			let i = i + 1;
+		}
+		
+		let i = 0;
+		let j = 0;
+		
+		while (i < 3){
+			if (a[0 + j] = 1 & a[3 + j] = 1 & a[6 + j] = 1){
+				let message = "Player 2 won by the column";
+				let exit = true;
+			}
+			if (a[0 + j] = 2 & a[3 + j] = 2 & a[6 + j] = 2){
+				let message = "Player 1 won by the column";
+				let exit = true;
+			}
+		
+			let j = j + 1;
+			let i = i + 1;
+		}
+		
+		let i = 0;
+		let j = 0;
+		
+		while (i < 2){
+			if (a[0 + j] = 1 & a[4] = 1 & a[8 - j] = 1){
+				let message = "Player 2 won by diagonal";
+				let exit = true;
+			}
+			if (a[0 + j] = 2 & a[4] = 2 & a[8 - j] = 2){
+				let message = "Player 1 won by diagonal";
+				let exit = true;
+			}
+		
+			let j = j + 2;
+			let i = i + 1;
+		}
+		
+		if (placed = 9){
+			let message = "It's a DRAW!";
+			let exit = true;
+		}
+
+	
+	
+		return;
+	}
+
+}

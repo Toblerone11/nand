@@ -1,3 +1,6 @@
+package tokenization;
+
+import tokenization.constants.TokenType;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -5,13 +8,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import constants.TokenType;
 
 
 /**
  * Created by Ron on 17/05/2016.
  */
 public class JackTokenizer {
+
+    //TODO order of recognition: comment, string, keyword, symbol, int,
 
     private static final String KEYWORD_STRING = "(class|method|function|constructor|int|"
             + "boolean|char|void|var|static|field|let|do|if|else|while|return|true|false|null|this)(.)?(.+)?";
@@ -43,7 +47,7 @@ public class JackTokenizer {
     private Integer intVal;
     private String stringVal;
     private List<String> carryLine;
-    private int currentLineNum;
+    public int currentLineNum;
     private boolean commentMode;
 
 
@@ -121,6 +125,26 @@ public class JackTokenizer {
 
     }
 
+    /**
+     * for testing
+     */
+    public String getCurrentToken() {
+        switch (tokenType) {
+            case INT_CONST:
+                return String.format("%d", intVal);
+            case STRING_CONST:
+                return stringVal;
+            case KEYWORD:
+                return keyWord;
+            case SYMBOL:
+                return String.format("%c", symbol);
+            case IDENTIFIER:
+                return identifier;
+            default:
+                return "";
+        }
+    }
+
     public void advance() throws SyntaxException, IOException {
         this.tokenType = null;
         this.keyWord = null;
@@ -185,7 +209,7 @@ public class JackTokenizer {
                                     }
                                 }
                             } else {
-                                throw new SyntaxException("General Scope", currentLineNum, "didn't recognize: " + currentToken);
+                                throw new SyntaxException("General Scope", currentLineNum, "didn't recognize:", getCurrentToken());
                             }
                         }
                     }
@@ -228,8 +252,8 @@ public class JackTokenizer {
         return null;
     }
 
-    void throwException(String scopeName) throws SyntaxException {
-        throw new SyntaxException(scopeName, currentLineNum, currentToken);
-    }
+//    public void throwException(String scopeName) throws SyntaxException {
+//        throw new SyntaxException(scopeName, currentLineNum, currentToken);
+//    }
 
 }

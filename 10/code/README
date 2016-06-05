@@ -1,0 +1,39 @@
+ronlik, toblerone
+===============================================================================
+Ron Pick, 		ID 301643334, ron.pick@mail.huji.ac.il
+Ron Likvornik, 	ID 302574694 ron.likvornik@mail.huji.ac.il
+===============================================================================
+
+                           Project 7 - VM Translator I
+                           ----------------------------------
+  
+
+Submitted Files
+---------------
+VMtranslator.java	- Manages the translation process of a given .vm files.
+
+Parser.java		- responsible for recognizing the type of each command at each line
+				  and to give details about the current parsed command
+				  
+CodeWriter.java	- writes commands in Hack assembly syntax. the commands are written 
+				  due to given details about command which was written in for the VM.
+					  
+FileOrgnizer.java	- wraps a FileWriter in order to protect the order of the written
+					- instructions in assembly. stores the current PC value after every wrriten line.
+
+README			- this file.
+
+Remarks
+-------
+* The design is as follows:
+	- The VMtranslator manages the process between the Parser class and the CodeWriter class.
+	  the VMtranslator is only aware to this classes. it lets the parser to read lines, ask it for 
+	  details about the current parsed command, and pass it to CodeWriter.
+	
+	- CodeWriter is independent class which recives details of command in vm language,
+	  and translate it into one or more assembly instructions. this class is not writting
+	  directly into a file, but uses the FileOrgnizer in order to write the instruction
+	  without errors of new lines spaces and comments. the CodeWriter is able to write
+	  only single line (with instruction, comment or space) every time it asks for. 
+  
+
