@@ -5,8 +5,6 @@ package tokenization.constants;
  */
 public class JackConstants {
 
-    public static final int TERMINAL = 1, NON_TERMINAL = 2;
-
     /* symbols */
     public static final char OPEN_SCOPE = '{', CLOSE_SCOPE = '}', SEPARATOR = ',', END_INSTRUCTION = ';',
             OPEN_PARAM_LIST = '(', CLOSE_PARAM_LIST = ')', OPEN_ARRAY = '[', CLOSE_ARRAY = ']',

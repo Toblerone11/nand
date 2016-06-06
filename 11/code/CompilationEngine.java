@@ -16,8 +16,9 @@ import static vmproduce.VmConstants.*;
  * Created by Ron on 17/05/2016.
  */
 public class CompilationEngine {
-    /* JackConstants */
-    private static final String ALLOC_FUNC = "Memory.alloc";
+    /* Jack Functions */
+    private static final String ALLOC_FUNC = "Memory.alloc", NEW_STR_FUNC = "String.new",
+                                STR_APPEND_FUNC = "String.appendChar";
 
     /* scope titles (for Exception messages */
     private static final String CLASS_TITLE = "class", CLASS_VAR_DEC = "class member declaration", VAR_DEC = "var declaration",
@@ -658,9 +659,20 @@ public class CompilationEngine {
                 break;
 
             case STRING_CONST:
-                //TODO what to do with this - thoughts: create local variable and push it.
-                String varName = generateStringVar();
+                //TODO create new string object, then append char after char
+                String strToken = tokenizer.getStringVal();
+                vmWriter.writePush(CONSTANT, strToken.length()); // pushing the size of the 'String' to allocate as arg.
+                vmWriter.writeCall(NEW_STR_FUNC, 1);        // create new String object. should push the base address of the object.
 
+                /* the address of the new String object is located at the top of the global stack.
+                 * we use the address as this argument to the method 'appendChar'. the method returns the base address
+                 * of the String object, and we can use it again to append more chars or to return it.
+                 */
+                for (int i = 0; i < strToken.length(); i++) {
+                    int charToPush = strToken.charAt(i);
+                    vmWriter.writePush(CONSTANT, charToPush);
+                    vmWriter.writeCall(STR_APPEND_FUNC, 2);
+                }
                 break;
 
             case KEYWORD:
