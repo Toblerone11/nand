@@ -19,24 +19,25 @@ import tokenization.constants.TokenType;
 public class JackTokenizer {
 
     private static final String KEYWORD_STRING = "(class|method|function|constructor|int|"
-            + "boolean|char|void|var|static|field|let|do|if|else|while|return|true|false|null|this)";
+            + "boolean|char|void|var|static|field|let|do|if|else|while|return|true|false|null|this)\\b";
     private static final String SYMBOL_STRING = "(\\{|\\}|\\(|\\)|\\[|\\]|\\.|\\,|\\;|\\+|\\-|\\*|\\/|\\&|\\||\\<|\\>|\\=|\\-)";
-    private static final String INT_CONST_STRING = "([0-32767])";
+    private static final String INT_CONST_STRING = "(\\d+)";
     private static final String IDENTIFIER_STRING = "([a-zA-z_][\\w_]*)";
     private static final String STR_CONST_STRING = "(\\\".*?\\\")";
-    private static final String COMMENT = "(?://.*|/\\*\\*?[\\s\\S]*\\*/)";
-    private static final String SINGLE_LINE_COMMENT = "//.*\n";
-    private static final String DOC_BLOCK_OPEN = "/**", COMMENT_BLOCK_OPEN = "/*", COMMENT_BLOCK_CLOSE = "*/";
-    private static final String STR_COMMENT = "/\\*\\*.*?\\*/|\\*.*?\\*/|//.*+\n";
+    private static final String SINGLE_LINE_COMMENT = "(//.*\n)";
+    private static final String STR_COMMENT = "/\\*\\*?[\\s\\S]*?\\*/";
+    private static final String NEW_LINE = "\n";
 
     private static final Pattern KEYWORD_PATTERN = Pattern.compile(KEYWORD_STRING);
     private static final Pattern SYMBOL_PATTERN = Pattern.compile(SYMBOL_STRING);
     private static final Pattern INT_CONST_PATTERN = Pattern.compile(INT_CONST_STRING);
     private static final Pattern IDENTIFIER_PATTERN = Pattern.compile(IDENTIFIER_STRING);
     private static final Pattern STR_PATTERN = Pattern.compile(STR_CONST_STRING);
-    private static final String STR_ALL = (STR_COMMENT + '|' + STR_CONST_STRING + '|' + SYMBOL_STRING + '|' + KEYWORD_STRING + '|' + INT_CONST_STRING + '|' + IDENTIFIER_STRING );
+    private static final String STR_ALL = (NEW_LINE + '|' + STR_COMMENT + '|' + SINGLE_LINE_COMMENT + '|' + STR_CONST_STRING + '|' + SYMBOL_STRING + '|' + KEYWORD_STRING + '|' + INT_CONST_STRING + '|' + IDENTIFIER_STRING );
     private static final Pattern ALL_PATT = Pattern.compile(STR_ALL);
     private static final Pattern SINGLE_LINE_COMMENT_PATT = Pattern.compile(SINGLE_LINE_COMMENT);
+    private static final Pattern BLOCK_COMMENT_PATT = Pattern.compile(STR_COMMENT);
+    private static final Pattern NEW_LINE_PATT = Pattern.compile(NEW_LINE);
 
     /* data members */
     private BufferedReader jackReader;
@@ -50,7 +51,6 @@ public class JackTokenizer {
     public int currentLineNum;
     private StringBuffer data;
     private Matcher m;
-
 
     public JackTokenizer(File jackFile) throws IOException {
         this.jackReader = new BufferedReader(new FileReader(jackFile));
@@ -67,16 +67,14 @@ public class JackTokenizer {
         this.identifier = null;
         this.intVal = null;
         this.stringVal = null;
-        this.currentLineNum = 0;
+        this.currentLineNum = 1;
     }
 
     public boolean hasMoreTokens() throws IOException {
 
         if (m.find()) {
             this.currentToken = m.group();
-        }
-        else
-        {
+        } else {
             return false;
         }
         return true;
@@ -89,43 +87,55 @@ public class JackTokenizer {
         this.identifier = null;
         this.intVal = null;
         this.stringVal = null;
-        Matcher tokenMatch = KEYWORD_PATTERN.matcher(currentToken);
-        if (tokenMatch.matches()) {
-            tokenType = TokenType.KEYWORD;
-            keyWord = tokenMatch.group(1);
+
+        if (NEW_LINE.equals(currentToken)) {
+            currentLineNum++;
+            if (hasMoreTokens()) {
+                advance();
+            }
         } else {
-            if (currentToken.equals(COMMENT_BLOCK_OPEN) || currentToken.equals(DOC_BLOCK_OPEN)) {
-                if (hasMoreTokens()) {
-                    advance();
-                }
+            Matcher tokenMatch = KEYWORD_PATTERN.matcher(currentToken);
+            if (tokenMatch.matches()) {
+                tokenType = TokenType.KEYWORD;
+                keyWord = tokenMatch.group(1);
             } else {
-                tokenMatch = SINGLE_LINE_COMMENT_PATT.matcher(currentToken);
+                tokenMatch = BLOCK_COMMENT_PATT.matcher(currentToken);
                 if (tokenMatch.matches()) {
+                    currentLineNum += currentToken.length() - currentToken.replace("\n", "").length();
                     if (hasMoreTokens()) {
                         advance();
                     }
                 } else {
-                    tokenMatch = SYMBOL_PATTERN.matcher(currentToken);
+                    tokenMatch = SINGLE_LINE_COMMENT_PATT.matcher(currentToken);
                     if (tokenMatch.matches()) {
-                        tokenType = TokenType.SYMBOL;
-                        symbol = tokenMatch.group(1).charAt(0);
+                        currentLineNum++;
+                        if (hasMoreTokens()) {
+                            advance();
+                        }
                     } else {
-                        tokenMatch = IDENTIFIER_PATTERN.matcher(currentToken);
+                        tokenMatch = SYMBOL_PATTERN.matcher(currentToken);
                         if (tokenMatch.matches()) {
-                            tokenType = TokenType.IDENTIFIER;
-                            identifier = tokenMatch.group(1);
+                            tokenType = TokenType.SYMBOL;
+                            symbol = tokenMatch.group(1).charAt(0);
                         } else {
-                            tokenMatch = STR_PATTERN.matcher(currentToken);
+                            tokenMatch = IDENTIFIER_PATTERN.matcher(currentToken);
                             if (tokenMatch.matches()) {
-                                tokenType = TokenType.STRING_CONST;
-                                stringVal = tokenMatch.group(0);
+                                tokenType = TokenType.IDENTIFIER;
+                                identifier = tokenMatch.group(1);
                             } else {
-                                tokenMatch = INT_CONST_PATTERN.matcher(currentToken);
+                                tokenMatch = STR_PATTERN.matcher(currentToken);
                                 if (tokenMatch.matches()) {
-                                    int temp = Integer.parseInt(currentToken);
-                                    if (temp >= 0 && temp <= 32767) {
-                                        tokenType = TokenType.INT_CONST;
-                                        intVal = temp;
+                                    currentLineNum += currentToken.length() - currentToken.replace("\n", "").length();
+                                    tokenType = TokenType.STRING_CONST;
+                                    stringVal = tokenMatch.group(0);
+                                } else {
+                                    tokenMatch = INT_CONST_PATTERN.matcher(currentToken);
+                                    if (tokenMatch.matches()) {
+                                        int temp = Integer.parseInt(currentToken);
+                                        if (temp >= 0 && temp <= 32767) {
+                                            tokenType = TokenType.INT_CONST;
+                                            intVal = temp;
+                                        }
                                     }
                                 }
                             }

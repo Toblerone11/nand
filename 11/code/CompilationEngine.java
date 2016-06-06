@@ -391,6 +391,7 @@ public class CompilationEngine {
     public void compileLet() throws IOException, SyntaxException {
         // assuming the current token is 'let'.
         compileBeginScope(LET_TITLE);
+        boolean isArray = false;
 
         // get var name
         setNextToken();
@@ -404,6 +405,7 @@ public class CompilationEngine {
         setNextToken();
         if (!(tokenizer.getTokenType() == SYMBOL)) throwSyntaxException(TOKEN_TYPE_MSG);
         if (tokenizer.getSymbol() == OPEN_ARRAY) {
+            isArray = true;
 
             // evaluate exact address.
             vmWriter.writePush(varSegment, varIndex); // push base address
@@ -412,9 +414,9 @@ public class CompilationEngine {
             vmWriter.writeArithmetic(VM_ADD);       // add the two values to get the real address.
 
             // store the exact address and change the segment and index respectively.
-            vmWriter.writePop(POINTER, PTR_THAT);
-            varSegment = THAT;
-            varIndex = BASE_INDEX;
+            vmWriter.writePop(TEMP, 1);
+//            varSegment = THAT;
+//            varIndex = BASE_INDEX;
 
             // check closing brackets
             if (!(tokenizer.getTokenType() == SYMBOL)) throwSyntaxException(TOKEN_TYPE_MSG);
@@ -428,6 +430,14 @@ public class CompilationEngine {
         // get assigned expression
         setNextToken();
         compileExpression();
+
+        if (isArray) {
+            // store the calculated destination address and change the segment and index respectively.
+            vmWriter.writePush(TEMP, 1);
+            vmWriter.writePop(POINTER, PTR_THAT);
+            varSegment = THAT;
+            varIndex = BASE_INDEX;
+        }
 
         // assign value to variable
         vmWriter.writePop(varSegment, varIndex);
@@ -725,6 +735,7 @@ public class CompilationEngine {
                     compileExpression();
 
                     // base index and index had been pushed
+//                    vmWriter.writePush(segment, index);
                     vmWriter.writeArithmetic(VM_ADD);   // add them together
                     vmWriter.writePop(POINTER, PTR_THAT);   // store the pointer to the memory location
                     vmWriter.writePush(THAT, BASE_INDEX);   // push the value

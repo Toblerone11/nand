@@ -61,6 +61,8 @@ public class Main {
                 } catch (NullPointerException e) {
                     System.out.println(tokenizer.currentLineNum);
                     throw e;
+                } catch (Exception e) {
+                    throw e;
                 } finally {
                     compiler.finish();
                 }
