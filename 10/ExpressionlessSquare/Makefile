@@ -11,11 +11,11 @@ JAVAC=javac
 JAVACFLAGS=
 
 SRCS=*.java constants/*.java
-EXEC=VMtranslator
+EXEC=JackAnalyzer
 
 TAR=tar
 TARFLAGS=cvf
-TARNAME=project8.tar
+TARNAME=project10.tar
 TARSRCS=$(SRCS) $(EXEC) README Makefile
 
 all: compile

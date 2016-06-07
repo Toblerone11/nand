@@ -4,36 +4,38 @@ Ron Pick, 		ID 301643334, ron.pick@mail.huji.ac.il
 Ron Likvornik, 	ID 302574694 ron.likvornik@mail.huji.ac.il
 ===============================================================================
 
-                           Project 7 - VM Translator I
+                           Project 10 - Jack Analyser
                            ----------------------------------
   
 
 Submitted Files
 ---------------
-VMtranslator.java	- Manages the translation process of a given .vm files.
+ComiplerEngine.java	- Top down CFG parser. compiles the code and generate xml as the code structure.
 
-Parser.java		- responsible for recognizing the type of each command at each line
-				  and to give details about the current parsed command
+JackTokenizer.java		- separating all token in the code into the basic tokens.
 				  
-CodeWriter.java	- writes commands in Hack assembly syntax. the commands are written 
-				  due to given details about command which was written in for the VM.
+SyntaxException.java	- used basically to debug the program, and can detec illegal jack source code.
 					  
-FileOrgnizer.java	- wraps a FileWriter in order to protect the order of the written
-					- instructions in assembly. stores the current PC value after every wrriten line.
+xmlFileOrgnizer.java	- wraps the xml file and write it in the correct structure.
+
+JavkConstants.java		- global constants used by the tokenizer and the compilerEngine.
+
+TokenType				- global enum for the possible tokenTypes. used by the tokenizer and the
+						  CompilerEngine.
+
+Main.java				- parsing the path and execute the code.
 
 README			- this file.
 
 Remarks
 -------
 * The design is as follows:
-	- The VMtranslator manages the process between the Parser class and the CodeWriter class.
-	  the VMtranslator is only aware to this classes. it lets the parser to read lines, ask it for 
-	  details about the current parsed command, and pass it to CodeWriter.
-	
-	- CodeWriter is independent class which recives details of command in vm language,
-	  and translate it into one or more assembly instructions. this class is not writting
-	  directly into a file, but uses the FileOrgnizer in order to write the instruction
-	  without errors of new lines spaces and comments. the CodeWriter is able to write
-	  only single line (with instruction, comment or space) every time it asks for. 
+	- The compilerEngine gets the token directly from the tokenizer and encasulates the context free
+	  rules as recursive methods. the only method which needed to be activated from outside the class
+	  is the 'compileClass' method, and the constructor ofcourse.
+	  
+	- the tokenizer based on regex where all tokenes are prefix free, meaning, when we start parsing
+	from the beginning we always know what should be the next token only by the ofirst characters of
+	the next string available from the source code.
   
 

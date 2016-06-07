@@ -1,5 +1,4 @@
 import tokenization.JackTokenizer;
-import tokenization.SyntaxException;
 import vmproduce.SymbolTable;
 import vmproduce.VMWriter;
 
@@ -205,6 +204,11 @@ public class CompilationEngine {
         symbolTable.defineSubroutine(subroutineName, subroutineType, returnType);
         this.functionName = subroutineName;
 
+        if (symbolTable.isMethod(subroutineName)) {
+            // insert 'this' symbol
+            symbolTable.define(JACK_THIS, this.className, ARG); // should get index 0;
+        }
+
         // get parameter list.
         setNextToken(); // getting the open parenthesis for the param list.
         if (!(tokenizer.getTokenType() == SYMBOL)) throwSyntaxException(TOKEN_TYPE_MSG);
@@ -244,8 +248,6 @@ public class CompilationEngine {
 
         // special operations for specific functions.
         if (symbolTable.isMethod(functionName)) {
-            // insert 'this' symbol
-            symbolTable.define(JACK_THIS, this.className, ARG); // should get index 0;
             vmWriter.writePush(ARG, 0);
             vmWriter.writePop(POINTER, PTR_THIS);
         }
@@ -413,10 +415,8 @@ public class CompilationEngine {
             compileExpression();                    // compute the index
             vmWriter.writeArithmetic(VM_ADD);       // add the two values to get the real address.
 
-            // store the exact address and change the segment and index respectively.
+            // store the exact address at the temp.
             vmWriter.writePop(TEMP, 1);
-//            varSegment = THAT;
-//            varIndex = BASE_INDEX;
 
             // check closing brackets
             if (!(tokenizer.getTokenType() == SYMBOL)) throwSyntaxException(TOKEN_TYPE_MSG);

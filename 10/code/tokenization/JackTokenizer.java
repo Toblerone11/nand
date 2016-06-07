@@ -180,22 +180,6 @@ public class JackTokenizer {
         return null;
     }
 
-    public char[] takeWhile(Reader reader, char[] target) throws IOException {
-        ArrayList<Character> collectedChars = new ArrayList<>();
-        char[] charBuffer = new char[target.length];
-        reader.read(charBuffer);
-        while (charBuffer != target) {
-            for (char c : charBuffer)
-            collectedChars.add(c);
-            reader.read(charBuffer);
-        }
-        char[] result = new char[collectedChars.size()];
-        for (int i = 0; i < result.length; i++) {
-            result[i] = collectedChars.get(i);
-        }
-        return result;
-    }
-
     /**
      * for testing
      */

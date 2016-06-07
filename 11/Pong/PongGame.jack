@@ -85,7 +85,7 @@ class PongGame {
                 do bat.move();
 		do moveBall();
             }
-
+		do Sys.wait(50);
             if (key = 130) {
 	        do bat.setDirection(1);
             }
@@ -99,6 +99,7 @@ class PongGame {
 		    }
 		}
             }
+		do Sys.wait(50);
 
             // Waits for the key to be released.
             while ((~(key = 0)) & (~exit)) {

@@ -10,7 +10,7 @@
 JAVAC=javac
 JAVACFLAGS=
 
-SRCS=*.java constants/*.java
+SRCS=*.java */*.java */*/*.java
 EXEC=JackAnalyzer
 
 TAR=tar
