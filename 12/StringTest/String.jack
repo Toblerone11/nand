@@ -7,24 +7,43 @@
  * Represents a String object. Implements the String type.
  */
 class String {
-	static NEW_LINE;
+	static int ASCII_DIGIT_BASE;
+	static int DIGIT_LOW_BOUND;
+	static int DIGIT_UP_BOUND;
+	static int NEG_ASCII;
 	
 	field Array charSeq;
 	field int size;
 	field int maxLen;
 	
+	/** initialies all static variables */
+	function void init() {
+		return;
+	}
     /** Constructs a new empty String with a maximum length of maxLength. */
     constructor String new(int maxLength) {
-	    let charSeq = Array.new(maxLength);
+	    let ASCII_DIGIT_BASE = 48;
+		let DIGIT_LOW_BOUND = 47;
+		let DIGIT_UP_BOUND = 58;
+		let NEG_ASCII = 45;
+	    if (maxLength > 0) {
+		    let charSeq = Array.new(maxLength);
+		}
+		else {
+		    let charSeq = null;
+		}
 		let size = 0;
 		let maxLen = maxLength;
-		return;
+		return this;
     }
 
     /** De-allocates the string and frees its space. */
     method void dispose() {
-	    do charSeq.dipose();
-		Memory.deAlloc(this);
+	    if (maxLen > 0) {
+		    do charSeq.dispose();
+		}
+		do Memory.deAlloc(this);
+		return;
     }
 
     /** Returns the current length of this String. */
@@ -39,14 +58,15 @@ class String {
 
     /** Sets the j'th character of this string to be c. */
     method void setCharAt(int j, char c) {
-	    let charSet[j] = c;
+	    let charSeq[j] = c;
+		return;
     }
 
     /** Appends the character c to the end of this String.
      *  Returns this string as the return value. */
     method String appendChar(char c) {
 	    if (~(size < maxLen)) {
-		    // throw an error
+		    do Sys.error("StringError: index out of bounds");
 		}
 	    let charSeq[size] = c;
 		let size = size + 1;
@@ -57,18 +77,83 @@ class String {
     method void eraseLastChar() {
 	    let size = size - 1;
 		let charSeq[size] = null;
+		return;
     }
 
     /** Returns the integer value of this String until the first non
      *  numeric character. */
     method int intValue() {
 	    //String2Int
+		var int decimalPlace;    // 10 to the power of the current position.
+		var int result;
+		var int ch;	  // current character.
+		var int position;
+		var int digit;    // digit the current char represents.
+		var int decVal;   // the digit multiplied by the decimal position.
+		var int negFactor; // -1 if negative number, 1 otherwise.
+		
+		let decimalPlace = 1;
+		let result = 0;
+		let ch = charSeq[0];
+		
+		// checking possibility for negative number.
+		if (~((ch < NEG_ASCII) | (ch > NEG_ASCII))) {
+		    let negFactor = -1;
+		}
+		else {
+		    let negFactor = 1;
+		}
+
+		let position = size - 1;
+		let ch = charSeq[position];
+		while ((ch > DIGIT_LOW_BOUND) & (ch < DIGIT_UP_BOUND) & (position < size)) {
+		    let digit = ch - ASCII_DIGIT_BASE;   // inferring the corresponding digit.
+			let decVal = digit * decimalPlace;  // evaluating the decimal value of the current digit.
+			let result = result + decVal;		// incrementing the result;
+			let decimalPlace = decimalPlace * 10; // updating the position of the decimal place.
+			let position = position -1;
+			let ch = charSeq[position];
+		}
+		
+		return result * negFactor;
     }
 
     /** Sets this String to hold a representation of the given number. */
     method void setInt(int number) {
-	    // Int2String
+	// reset string
+		do clear();
+		
+		if (number < 0) {
+		    do appendChar(NEG_ASCII);
+			let number = -number;
+		}
+		do setIntRecurse(number);
+		return;
     }
+	
+	method void clear() {
+	    while (size > 0) {
+		    let charSeq[size] = null;
+			let size = size -1;
+		}
+		return;
+	}
+	
+	method void setIntRecurse(int n) {
+	    var int digit;      // the current digit to add to the string.
+		var int asciiRepr; // the ascii representation of the digit.
+		var int numberResidual; // the current number divided by 10, floor.
+	
+	    if (~(n > 0)) {
+		    return;
+		}
+		let numberResidual = Math.divide(n, 10);
+		let digit = n - (10 * numberResidual); // divide by 10, floor, multiply by 10.
+		let asciiRepr = digit + ASCII_DIGIT_BASE;
+		do setIntRecurse(numberResidual);
+		do appendChar(asciiRepr);
+		return;
+	}
 
     /** Returns the new line character. */
     function char newLine() {
