@@ -8,16 +8,42 @@
  */
 class Math {
 
+	static int nSize
+
     /** Initializes the library. */
     function void init() {
+		let nSize = 16;
     }
 
     /** Returns the absolute value of x. */
     function int abs(int x) {
+	
+		if (x > 0){
+			return x;
+		}
+		
+		return -x;
     }
 
     /** Returns the product of x and y. */
     function int multiply(int x, int y) {
+		var int sum;
+		var int bitIndex;
+		var int shiftedX;
+		let sum = 0;
+		let bitIndex = 0;
+		let shiftedX = x;
+	
+		while (bitIndex < nSize){
+			if (Math.bit(y,bitIndex) = 1){
+				let sum = sum + shiftedX;
+			}
+			
+			let shiftedX = 2 * shiftedX;
+			let bitIndex = bitIndex + 1;
+		
+		}
+		return sum;
     }
 
     /** Returns the integer part of x/y. */
@@ -30,9 +56,20 @@ class Math {
 
     /** Returns the greater number. */
     function int max(int a, int b) {
+	
+		if (a > b){
+			return a;
+		}
+		
+		return b;
     }
 
     /** Returns the smaller number. */
     function int min(int a, int b) {
+		if (a > b){
+			return b;
+		}
+		
+		return a;
     }
 }
