@@ -8,6 +8,9 @@
  */
 class Sys {
 
+	static int WAIT_FACTOR;
+	static String ERR_MSG;
+	
     /** Performs all the initializations required by the OS. */
     function void init() {
 	    do Memory.init();
@@ -16,6 +19,9 @@ class Sys {
 		do Keyboard.init();
 		do Output.init();
 		// do String.init();
+		
+		let WAIT_FACTOR = 50;
+		let ERR_MSG = "ERR";
 		
 		do Main.main();
 		do Sys.halt();
@@ -39,7 +45,7 @@ class Sys {
 		}
 		
 		while (duration > 0) {
-		    let waitCounter = 50;
+		    let waitCounter = WAIT_FACTOR;
 			while (waitCounter > 0) {
 			    let waitCounter = waitCounter - 1;
 			}
@@ -50,9 +56,6 @@ class Sys {
 
     /** Prints the given error code in the form "ERR<errorCode>", and halts. */
     function void error(int errorCode) {
-	    var String ERR_MSG;
-		
-		let ERR_MSG = "ERR";
 		do Output.printString(ERR_MSG);
 		do Output.printInt(errorCode);
 	    return;

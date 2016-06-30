@@ -14,9 +14,29 @@ class Output {
 
     // Character map for printing on the left of a screen word
     static Array charMaps; 
+	static int cursorByte; // byte address in the screen.
+	static int cursorBit;  // number between 0 to 15 (size of byte is 16);
+	static int leftCharEraser; // left side of the byte (first 8 bits)
+	static int rightCharEraser; // // right side of the byte (last 8 bits)
+	
+	static int screenBase;
+	static int rowFactor; // each character row is 11 rows of bits on the screen. (23 rows)
+	static int colFactor; // each character column is 8 columns of bits on the screen. (64 cols)
+	
 
     /** Initializes the screen and locates the cursor at the screen's top-left. */
     function void init() {
+	    do Output.initMap();
+	    let screenBase = 16384;
+	
+        let cursorByte = screenBase;
+        let cursorBit = 0;
+		let leftCharEraser = 255;
+		let rightCharEraser = -256;
+		
+		let rowFactor = 11;
+		let colFactor = 8;
+		return;
     }
 
     // Initalizes the character map array
@@ -65,7 +85,7 @@ class Output {
         do Output.create(64,30,51,51,59,59,59,27,3,30,0,0);  // @
         do Output.create(63,30,51,51,24,12,12,0,12,12,0,0);  // ?
 
-        do Output.create(65,0,0,0,0,0,0,0,0,0,0,0);          // A ** TO BE FILLED **
+        do Output.create(65,12,30,51,51,63,51,51,51,51,0,0);   // A ** TO BE FILLED **
         do Output.create(66,31,51,51,51,31,51,51,51,31,0,0); // B
         do Output.create(67,28,54,35,3,3,3,35,54,28,0,0);    // C
         do Output.create(68,15,27,51,51,51,51,51,27,15,0,0); // D
@@ -167,32 +187,137 @@ class Output {
         
         return charMaps[c];
     }
+	
 
     /** Moves the cursor to the j’th column of the i’th row,
      *  and erases the character that was there. */
     function void moveCursor(int i, int j) {
+	    var int realColumn;
+		var int realRow;
+		var int byteColumn;
+		var int rowIter;
+		var int currentByte;
+		var int eraseFactor;
+		
+		let realColumn = j * colFactor;
+		let realRow = i * rowFactor;
+		let byteColumn = realColumn / 16; // the column counted in bytes.
+	    let cursorByte = screenBase + (realRow * 32) + byteColumn; // i * 32 is the address of the first byte in the row.
+	    let cursorBit = realColumn - (byteColumn * 16); // j % 16
+		
+		if (cursorBit < 8) {
+		    let eraseFactor = leftCharEraser;  // 0000000011111111
+		} else {
+		    let eraseFactor = rightCharEraser; // 1111111100000000
+		}
+		
+		let rowIter = 0;
+		let currentByte = cursorByte;
+		while (~(rowIter > rowFactor)) {
+		    let currentByte[0] = currentByte[0] & eraseFactor; 
+			let currentByte  = currentByte + 32;
+			let rowIter = rowIter + 1;
+		}
+		return;
     }
 
+	// move the cursor one step ahead
+	function void cursorStep() {
+	    if (~(cursorByte < 24159) & ~(cursorBit < 8)) {
+		    let cursorByte = screenBase;
+            let cursorBit = 0;
+		}
+		else {
+		    if (cursorBit > 0) {
+			    let cursorByte = cursorByte + 1;
+				let cursorBit = 0;
+			}
+			else {
+			    let cursorBit = 8;
+			}            
+		}
+	    return;
+	}
     /** Prints c at the cursor location and advances the cursor one
      *  column forward. */
     function void printChar(char c) {
+	    var int rowIter;
+		var int cleanByte;
+		var int printByte;
+		var int currentByte;
+		var int currentValue;
+		var Array map;
+		
+		let map = Output.getMap(c);
+		let currentByte = cursorByte;
+		let rowIter = 0;
+		while (rowIter < rowFactor) {
+		    if (cursorBit < 8) {
+		        let cleanByte = rightCharEraser;
+				let printByte = map[rowIter];
+		    } else {
+			    let cleanByte = leftCharEraser;
+			    let printByte = (map[rowIter] * 256);
+			}
+			let currentValue = currentByte[0];
+			let currentValue = currentValue & cleanByte; // output the character to the screen
+			let currentValue = currentValue | printByte; // output the character to the screen
+			let currentByte[0] = currentValue;
+			let currentByte = currentByte + 32;
+			let rowIter = rowIter + 1;
+		}
+		do Output.cursorStep();
+		return;
     }
 
     /** Prints s starting at the cursor location, and advances the
      *  cursor appropriately. */
     function void printString(String s) {
+	    var int strIter;
+		var int strLen;
+		
+		let strIter = 0;
+		let strLen = s.length();
+		while (strIter < strLen) {
+		    do Output.printChar(s.charAt(strIter));
+			let strIter = strIter + 1;
+		}
+		return;
     }
 
     /** Prints i starting at the cursor location, and advances the
      *  cursor appropriately. */
     function void printInt(int i) {
+	    var String intRepr;
+		
+		let intRepr = String.new(6); // assuming no integer can't be more than 5 digits long.
+		do intRepr.setInt(i);
+		do Output.printString(intRepr);
+		return;
     }
 
     /** Advances the cursor to the beginning of the next line. */
     function void println() {
+	    let cursorByte = screenBase + ((((cursorByte - screenBase) / (32 * 11)) + 1) * 32 * 11);
+		let cursorBit = 0;
+		return;
     }
 
     /** Moves the cursor one column back. */
     function void backSpace() {
+	    if (cursorByte > 0) {
+		    if (cursorBit > 0) {
+			    let cursorBit = 0;
+			}
+			else {
+			    let cursorByte = cursorByte - 1;
+				let cursorBit = 8;
+			}
+		}
+		else {
+		    let cursorByte = screenBase + (32 * 11 * 22);
+			let cursorBit = 8;
+		}
+		return;
     }
 }
