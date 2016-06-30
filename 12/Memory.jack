@@ -64,7 +64,6 @@ class Memory {
 		let best_size = curr_addr[0];
 		let best_addr = curr_addr;
 		let best_prev = curr_prev;
-		
 	    while (curr_addr > 0 ) {
 		    let curr_size = curr_addr[0];
 		    if (curr_size > size) {
@@ -76,6 +75,10 @@ class Memory {
 			}
 			let curr_prev = curr_addr;
 			let curr_addr = curr_addr[1]; 
+		}
+		
+		if (best_size < size) {
+		    do Sys.error(0);
 		}
 		
 		// checks if there is more space in the matched block.
@@ -158,6 +161,6 @@ class Memory {
 		
 		let newBlockAddr[0] = newBlockSize;
 		let newBlockAddr[1] = newNextAddr;
-		return;		
+		return;
     }    
 }

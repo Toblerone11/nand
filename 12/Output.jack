@@ -302,6 +302,7 @@ class Output {
 		let intRepr = String.new(6); // assuming no integer can't be more than 5 digits long.
 		do intRepr.setInt(i);
 		do Output.printString(intRepr);
+		do intRepr.dispose();
 		return;
     }
 

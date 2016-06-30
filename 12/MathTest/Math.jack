@@ -11,6 +11,7 @@ class Math {
 	static int nSize;
 	static int sqrtSize;
 	static Array binaryRepArray;
+	static int lprod;
 
     /** Initializes the library. */
     function void init() {
@@ -26,6 +27,7 @@ class Math {
 			let binaryRep = binaryRep + binaryRep;
 			let BinaryIndex = BinaryIndex + 1;
 		}
+		let lprod = 0;
 		
 		return;
     }
@@ -65,9 +67,9 @@ class Math {
 		let sum = 0;
 		let bitIndex = 0;
 		let shiftedX = x;
-		let bitArray = Math.getBitArray(x);
+		let bitArray = Math.getBitArray(y);
 		while (bitIndex < nSize){
-			if (bitArray[bitIndex] = 1){
+			if (bitArray[bitIndex]){
 				let sum = sum + shiftedX;
 			}
 			
@@ -86,7 +88,8 @@ class Math {
 		// We work with the abs, in order to avoid working with the sign
 		let PositiveX = Math.abs(x);
 		let PositiveY = Math.abs(y);
-		let result = Math.recDivision(PositiveX, PositiveY, 0);
+		let lprod = 0;
+		let result = Math.recDivision(PositiveX, PositiveY);
 		
 		if ((x > 0 & y > 0)| (x < 0 & y < 0)){
 			return result;
@@ -100,13 +103,17 @@ class Math {
     }
 	
 	/** Recursion of the alogirhtm we were given in the book */
-	function int recDivision(int x, int y, int lprod){
+	function int recDivision(int x, int y){
 		var int q;
 		if(y > x){
 			return 0;
 		}
 		// using lprod in order to avoid using multiplication
-		let q = Math.recDivision(x, y + y , lprod + y + y);
+		
+		let q = Math.recDivision(x, y + y);
+		if (Math.bit(q, 1)) {
+		    let lprod = lprod + (y + y);
+		}
 		if((x - lprod) < y ){
 			return q+q;
 		}
@@ -123,10 +130,10 @@ class Math {
 		var int sqEqTemp;
 		let y = 0;
 		let sqrtIndex = sqrtSize;
-		while (sqrtIndex > 0){
+		while (~(sqrtIndex < 0)) {
 			let eqTemp = y + binaryRepArray[sqrtIndex];
 			let sqEqTemp = Math.multiply(eqTemp, eqTemp);
-			if ((sqEqTemp < x) | (sqEqTemp = x)){
+			if (~(sqEqTemp > x) & (sqEqTemp > 0)) {
 				 let y = eqTemp;
 			}
 		
