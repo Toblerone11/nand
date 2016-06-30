@@ -8,31 +8,151 @@
  */
 class Math {
 
+	static int nSize;
+	static int sqrtSize;
+	static Array binaryRepArray;
+
     /** Initializes the library. */
     function void init() {
+		var int BinaryIndex;
+		var int binaryRep;
+		let nSize = 16;
+		let sqrtSize = 7;
+		let binaryRepArray = Array.new(16);
+		let BinaryIndex = 0;
+		let binaryRep = 1;
+		while(BinaryIndex < nSize){
+			let binaryRepArray[BinaryIndex] = binaryRep;
+			let binaryRep = binaryRep + binaryRep;
+		}
+		
+		return;
+    }
+	
+	function boolean bit(int x, int binaryRep){
+        return ~((x & binaryRep) = 0);
+    }
+	
+	function Array getBitArray(int x){
+		var int BinaryIndex;
+		var Array bitArray;
+		let bitArray = Array.new(16);
+		let BinaryIndex = 0;
+		while(BinaryIndex < nSize){
+			let bitArray[BinaryIndex] = Math.bit(x, binaryRepArray[BinaryIndex]);
+			let BinaryIndex = BinaryIndex + 1;
+		}
+        return bitArray;
     }
 
     /** Returns the absolute value of x. */
     function int abs(int x) {
+	
+		if (x > 0){
+			return x;
+		}
+		
+		return -x;
     }
 
     /** Returns the product of x and y. */
     function int multiply(int x, int y) {
+		var int sum;
+		var int bitIndex;
+		var int shiftedX;
+		var Array bitArray;
+		let sum = 0;
+		let bitIndex = 0;
+		let shiftedX = x;
+		let bitArray = Math.getBitArray(x);
+		while (bitIndex < nSize){
+			if (bitArray[bitIndex] = 1){
+				let sum = sum + shiftedX;
+			}
+			
+			let shiftedX = shiftedX + shiftedX;
+			let bitIndex = bitIndex + 1;
+		
+		}
+		return sum;
     }
 
     /** Returns the integer part of x/y. */
     function int divide(int x, int y) {
+		var int PositiveX;
+		var int PositiveY;
+		var int result;
+		// We work with the abs, in order to avoid working with the sign
+		let PositiveX = Math.abs(x);
+		let PositiveY = Math.abs(y);
+		let result = Math.recDivision(PositiveX, PositiveY, 0);
+		
+		if ((x > 0 & y > 0)| (x < 0 & y < 0)){
+			return result;
+		}
+		else{
+			return -result;
+		}
+		
+		
+	
     }
+	
+	/** Recursion of the alogirhtm we were given in the book */
+	function int recDivision(int x, int y, int lprod){
+		var int q;
+		if(y > x){
+			return 0;
+		}
+		// using lprod in order to avoid using multiplication
+		let q = Math.recDivision(x, y + y , lprod + y + y);
+		if((x - lprod) < y ){
+			return q+q;
+		}
+		return q+q+1;
+    }
+	
+		
 
     /** Returns the integer part of the square root of x. */
     function int sqrt(int x) {
+		var int y;
+		var int sqrtIndex;
+		var int eqTemp;
+		var int sqEqTemp;
+		let y = 0;
+		let sqrtIndex = sqrtSize;
+		while (sqrtIndex > 0){
+			let eqTemp = y + binaryRepArray[sqrtIndex];
+			let sqEqTemp = Math.multiply(eqTemp, eqTemp);
+			if ((sqEqTemp < x) | (sqEqTemp = x)){
+				 let y = eqTemp;
+			}
+		
+			let sqrtIndex = sqrtIndex - 1;
+		}
+		
+		return y;
+	
+	
     }
 
     /** Returns the greater number. */
     function int max(int a, int b) {
+	
+		if (a > b){
+			return a;
+		}
+		
+		return b;
     }
 
     /** Returns the smaller number. */
     function int min(int a, int b) {
+		if (a > b){
+			return b;
+		}
+		
+		return a;
     }
 }
